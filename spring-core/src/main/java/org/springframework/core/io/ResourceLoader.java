@@ -40,25 +40,23 @@ import org.springframework.util.ResourceUtils;
  */
 public interface ResourceLoader {
 
-	/** Pseudo URL prefix for loading from the class path: "classpath:" */
+	/** classpath: 前缀 */
 	String CLASSPATH_URL_PREFIX = ResourceUtils.CLASSPATH_URL_PREFIX;
 
 
 	/**
-	 * Return a Resource handle for the specified resource location.
-	 * <p>The handle should always be a reusable resource descriptor,
-	 * allowing for multiple {@link Resource#getInputStream()} calls.
+	 * 从指定的location载入一个资源文件并返回一个Resource对象.
+	 * <p>该对象必须是能够被重复使用，允许多次执行{@link Resource#getInputStream()}.
 	 * <p><ul>
-	 * <li>Must support fully qualified URLs, e.g. "file:C:/test.dat".
-	 * <li>Must support classpath pseudo-URLs, e.g. "classpath:test.dat".
-	 * <li>Should support relative file paths, e.g. "WEB-INF/test.dat".
-	 * (This will be implementation-specific, typically provided by an
-	 * ApplicationContext implementation.)
+	 * <li>必须支持绝对路径，如"file:C:/test.dat".
+	 * <li>必须支持classpath路径，如"classpath:test.dat".
+	 * <li>应该支持相对路径，如"WEB-INF/test.dat".
+	 * (这是基于特定子类实现的，通常由ApplicationContext实现提供.)
 	 * </ul>
-	 * <p>Note that a Resource handle does not imply an existing resource;
-	 * you need to invoke {@link Resource#exists} to check for existence.
-	 * @param location the resource location
-	 * @return a corresponding Resource handle (never {@code null})
+	 * <p>需要注意的是该Resource对象并不意味着路径下存在资源文件，
+	 * 所以需要通过{@link Resource#exists}查看是否存在这个资源文件.
+	 * @param location 资源文件路径
+	 * @return 指定路径对应的Resource对象（就算文件不存在，但返回的Resource不为null）
 	 * @see #CLASSPATH_URL_PREFIX
 	 * @see Resource#exists()
 	 * @see Resource#getInputStream()
@@ -66,6 +64,7 @@ public interface ResourceLoader {
 	Resource getResource(String location);
 
 	/**
+	 * 一般返回的是Thread.currentThread().getContextClassLoader()，也就是系统默认的Application ClassLoader
 	 * Expose the ClassLoader used by this ResourceLoader.
 	 * <p>Clients which need to access the ClassLoader directly can do so
 	 * in a uniform manner with the ResourceLoader, rather than relying
