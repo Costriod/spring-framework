@@ -115,6 +115,11 @@ import org.springframework.core.ResolvableType;
 public interface BeanFactory {
 
 	/**
+	 * 针对FactoryBean接口子类实现，举个例子：
+	 * 如果CustomClass实现FactoryBean接口，假设注入到spring容器后name为customClass，那么通过ApplicationContext
+	 * 的getBean("customClass")方法获得的对象并不是CustomClass，而是CustomClass的getObject()返回的对象
+	 * 那么如果要获取CustomClass这个bean本身该如何做呢？那么就必须使用ApplicationContext的getBean("&customClass")方法才能返回
+	 * 注意&customClass前面的"&"符号表示获取FactoryBean对象本身，而不是FactoryBean的getObject()返回的对象
 	 * Used to dereference a {@link FactoryBean} instance and distinguish it from
 	 * beans <i>created</i> by the FactoryBean. For example, if the bean named
 	 * {@code myJndiObject} is a FactoryBean, getting {@code &myJndiObject}
