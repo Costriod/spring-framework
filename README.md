@@ -8,9 +8,9 @@ context.start();
 
 **1.ClassPathXmlApplicationContext类继承关系**
 
-![](./images/hierach.PNG)
+![](./images/diagram.png)
 
 **2.ClassPathXmlApplicationContext主要方法**
 
-![](./images/ClassPathXmlApplicationContext.PNG)
+![](./images/ClassPathXmlApplicationContext.png)
 
