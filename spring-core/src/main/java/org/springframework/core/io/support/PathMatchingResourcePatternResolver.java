@@ -273,18 +273,20 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	@Override
 	public Resource[] getResources(String locationPattern) throws IOException {
 		Assert.notNull(locationPattern, "Location pattern must not be null");
+		//判断是否是 classpath*: 作为locationPattern开头标记
 		if (locationPattern.startsWith(CLASSPATH_ALL_URL_PREFIX)) {
 			// a class path resource (multiple resources for same name possible)
+			// 判断locationPattern后缀是否包含通配符 * 或 ?
 			if (getPathMatcher().isPattern(locationPattern.substring(CLASSPATH_ALL_URL_PREFIX.length()))) {
 				// a class path resource pattern
 				return findPathMatchingResources(locationPattern);
 			}
-			else {
+			else {//如果不包含通配符，则在classpath以绝对路径方式查找
 				// all class path resources with the given name
 				return findAllClassPathResources(locationPattern.substring(CLASSPATH_ALL_URL_PREFIX.length()));
 			}
 		}
-		else {
+		else {//classpath*: 不是locationPattern开头标记
 			// Generally only look for a pattern after a prefix here,
 			// and on Tomcat only after the "*/" separator for its "war:" protocol.
 			int prefixEnd = (locationPattern.startsWith("war:") ? locationPattern.indexOf("*/") + 1 :
@@ -521,6 +523,11 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	 * remainder of the location as pattern.
 	 * <p>Will return "/WEB-INF/" for the pattern "/WEB-INF/*.xml",
 	 * for example.
+	 * <br>找到根路径，一般路径格式是这样(protocol:/path/...)，从"protocol:"之后找，
+	 * 如果路径包含"*"或"?"，则从后往前继续找，直到"protocol:"标记处为止，如
+	 * <br>1.classpath*:/a/b/*.class  ->  classpath*:/a/b/
+	 * <br>2.classpath*:/a/b/c.class  ->  classpath*:/a/b/c.class
+	 * <br>3.classpath*:*a/b.class  ->  classpath*:
 	 * @param location the location to check
 	 * @return the part of the location that denotes the root directory
 	 * @see #retrieveMatchingFiles

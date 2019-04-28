@@ -37,7 +37,7 @@ import org.springframework.util.StringValueResolver;
  */
 public class SimpleAliasRegistry implements AliasRegistry {
 
-	/** Map from alias to canonical name */
+	/** 维护alias别名与name真实名称的映射关系 */
 	private final Map<String, String> aliasMap = new ConcurrentHashMap<String, String>(16);
 
 
@@ -129,7 +129,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 			if (registeredName.equals(name)) {
 				String alias = entry.getKey();
 				result.add(alias);
-				retrieveAliases(alias, result);
+				retrieveAliases(alias, result);//因为bean的name和alias不存在循环的情况，所以这一步递归最终会结束
 			}
 		}
 	}
@@ -177,6 +177,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 	}
 
 	/**
+	 * 判断别名是否成环，即某个bean名称为A别名为B，另一个bean名称为B别名为A，这种情况就要抛异常
 	 * Check whether the given name points back to the given alias as an alias
 	 * in the other direction already, catching a circular reference upfront
 	 * and throwing a corresponding IllegalStateException.

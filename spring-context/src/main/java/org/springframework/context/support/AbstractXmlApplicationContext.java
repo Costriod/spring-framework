@@ -71,6 +71,8 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 
 
 	/**
+	 * 1.初始化BeanDefinitionReader
+	 * 2.BeanDefinitionReader载入BeanDefinition
 	 * Loads the bean definitions via an XmlBeanDefinitionReader.
 	 * @see org.springframework.beans.factory.xml.XmlBeanDefinitionReader
 	 * @see #initBeanDefinitionReader
@@ -90,6 +92,9 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 		// Allow a subclass to provide custom initialization of the reader,
 		// then proceed with actually loading the bean definitions.
 		initBeanDefinitionReader(beanDefinitionReader);
+		//读取配置文件，解析成一个个BeanDefinition对象注册到DefaultListableBeanFactory
+		//同时也会将bean的别名注册到DefaultListableBeanFactory
+		//这个loadBeanDefinitions内部嵌套跳转很多层，一层层断点看下去很晕
 		loadBeanDefinitions(beanDefinitionReader);
 	}
 
@@ -119,11 +124,11 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	 */
 	protected void loadBeanDefinitions(XmlBeanDefinitionReader reader) throws BeansException, IOException {
 		Resource[] configResources = getConfigResources();
-		if (configResources != null) {
+		if (configResources != null) {//如果configResources不为空，则载入这些resource并解析
 			reader.loadBeanDefinitions(configResources);
 		}
 		String[] configLocations = getConfigLocations();
-		if (configLocations != null) {
+		if (configLocations != null) {//如果configLocations不为空，则载入这些location下的配置文件并解析
 			reader.loadBeanDefinitions(configLocations);
 		}
 	}

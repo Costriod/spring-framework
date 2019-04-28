@@ -62,9 +62,13 @@ import org.springframework.context.ApplicationContextException;
  * @see org.springframework.context.annotation.AnnotationConfigApplicationContext
  */
 public abstract class AbstractRefreshableApplicationContext extends AbstractApplicationContext {
-
+	/**
+	 * 是否允许beanDefinition被覆盖
+	 */
 	private Boolean allowBeanDefinitionOverriding;
-
+	/**
+	 * 是否允许循环依赖
+	 */
 	private Boolean allowCircularReferences;
 
 	/** Bean factory for this context */
@@ -112,20 +116,27 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 
 
 	/**
+	 * 创建beanFactory，载入BeanDefinition并注册到beanFactory，别名也会注册进去
 	 * This implementation performs an actual refresh of this context's underlying
 	 * bean factory, shutting down the previous bean factory (if any) and
 	 * initializing a fresh bean factory for the next phase of the context's lifecycle.
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
-		if (hasBeanFactory()) {
-			destroyBeans();
-			closeBeanFactory();
+		if (hasBeanFactory()) {//beanFactory不为null
+			destroyBeans();//销毁bean，默认是销毁所有单例bean，子类可重写
+			closeBeanFactory();//beanFactory指向null让GC回收
 		}
 		try {
+			//创建一个beanFactory
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
+			//id默认是类名+ @符号 + 16进制哈希码
+			//设置serializationId，并且缓存到map，不过value是WeakReference
 			beanFactory.setSerializationId(getId());
+			//设置是否允许beanDefinition被覆盖、是否允许循环引用
 			customizeBeanFactory(beanFactory);
+			//抽象方法，一般是AbstractXmlApplicationContext#loadBeanDefinitions
+			//载入一些配置，创建beanDefinition并注册到beanFactory里面（别名也会注册进去）
 			loadBeanDefinitions(beanFactory);
 			synchronized (this.beanFactoryMonitor) {
 				this.beanFactory = beanFactory;
@@ -224,6 +235,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	}
 
 	/**
+	 * 抽象方法，由子类实现
 	 * Load bean definitions into the given bean factory, typically through
 	 * delegating to one or more bean definition readers.
 	 * @param beanFactory the bean factory to load bean definitions into
