@@ -53,6 +53,9 @@ public abstract class ObjectUtils {
 
 
 	/**
+	 * 一般有Throwable分Error和Exception，其中Exception分RuntimeException和其他Exception，
+	 * 除了RuntimeException和Error之外，其他的都称作CheckedException
+	 *
 	 * Return whether the given throwable is a checked exception:
 	 * that is, neither a RuntimeException nor an Error.
 	 * @param ex the throwable to check
@@ -66,11 +69,13 @@ public abstract class ObjectUtils {
 	}
 
 	/**
-	 * Check whether the given exception is compatible with the specified
-	 * exception types, as declared in a throws clause.
-	 * @param ex the exception to check
-	 * @param declaredExceptions the exception types declared in the throws clause
-	 * @return whether the given exception is compatible
+	 * 检查传入的Throwable对象是否符合指定的Exception类型
+	 * <br>1.如果是RuntimeException或Error则返回true
+	 * <br>2.如果ex是declaredExceptions类或子类则返回true (declaredExceptions可能有多个类，只要一个满足即可)
+	 * <br>3.否则返回false
+	 * @param ex 待检查的exception对象
+	 * @param declaredExceptions 方法的throw语句后面追加的exception类型列表
+	 * @return exception是否符合指定的类型
 	 */
 	public static boolean isCompatibleWithThrowsClause(Throwable ex, Class<?>... declaredExceptions) {
 		if (!isCheckedException(ex)) {
@@ -87,6 +92,7 @@ public abstract class ObjectUtils {
 	}
 
 	/**
+	 * 判断对象是否是数组类型，如传入String[] arr则为true
 	 * Determine whether the given object is an array:
 	 * either an Object array or a primitive array.
 	 * @param obj the object to check
@@ -96,6 +102,7 @@ public abstract class ObjectUtils {
 	}
 
 	/**
+	 * 判断数组对象是否为空，只要是null或者length为0则为true
 	 * Determine whether the given array is empty:
 	 * i.e. {@code null} or of zero length.
 	 * @param array the array to check
@@ -106,14 +113,13 @@ public abstract class ObjectUtils {
 	}
 
 	/**
-	 * Determine whether the given object is empty.
-	 * <p>This method supports the following object types.
-	 * <ul>
-	 * <li>{@code Array}: considered empty if its length is zero</li>
-	 * <li>{@link CharSequence}: considered empty if its length is zero</li>
-	 * <li>{@link Collection}: delegates to {@link Collection#isEmpty()}</li>
-	 * <li>{@link Map}: delegates to {@link Map#isEmpty()}</li>
-	 * </ul>
+	 * 判断是否为空
+	 *
+	 * <br>1.普通对象则判断是否null
+	 * <br>2.字符串对象则判断length是否为0
+	 * <br>3.数组对象则判断length是否为0
+	 * <br>4.集合或Map对象则判断是否empty
+
 	 * <p>If the given object is non-null and not one of the aforementioned
 	 * supported types, this method returns {@code false}.
 	 * @param obj the object to check
@@ -567,6 +573,7 @@ public abstract class ObjectUtils {
 	//---------------------------------------------------------------------
 
 	/**
+	 * 返回"类名@16进制格式hashCode"，如java.lang.Integer@0xffff
 	 * Return a String representation of an object's overall identity.
 	 * @param obj the object (may be {@code null})
 	 * @return the object's identity as String representation,
@@ -580,6 +587,7 @@ public abstract class ObjectUtils {
 	}
 
 	/**
+	 * 将对象hashCode转成16进制格式
 	 * Return a hex String form of an object's identity hash code.
 	 * @param obj the object
 	 * @return the object's identity code in hex notation

@@ -127,6 +127,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		implements ConfigurableApplicationContext, DisposableBean {
 
 	/**
+	 * 默认MessageSource这个bean的名字
 	 * Name of the MessageSource bean in the factory.
 	 * If none is supplied, message resolution is delegated to the parent.
 	 * @see MessageSource
@@ -134,6 +135,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	public static final String MESSAGE_SOURCE_BEAN_NAME = "messageSource";
 
 	/**
+	 * 默认LifecycleProcessor这个bean的名称
 	 * Name of the LifecycleProcessor bean in the factory.
 	 * If none is supplied, a DefaultLifecycleProcessor is used.
 	 * @see org.springframework.context.LifecycleProcessor
@@ -142,6 +144,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	public static final String LIFECYCLE_PROCESSOR_BEAN_NAME = "lifecycleProcessor";
 
 	/**
+	 * 默认ApplicationEventMulticaster这个bean的名称
 	 * Name of the ApplicationEventMulticaster bean in the factory.
 	 * If none is supplied, a default SimpleApplicationEventMulticaster is used.
 	 * @see org.springframework.context.event.ApplicationEventMulticaster
@@ -160,35 +163,35 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	/** Logger used by this class. Available to subclasses. */
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	/** Unique id for this context, if any */
+	/** 返回当前context对象的唯一id，格式为 "类名 + @ + 16进制格式hashCode" */
 	private String id = ObjectUtils.identityToString(this);
 
-	/** Display name */
+	/** 当前context对象展示名称，格式为 "类名 + @ + 16进制格式hashCode" */
 	private String displayName = ObjectUtils.identityToString(this);
 
-	/** Parent context */
+	/** 父级context对象 */
 	private ApplicationContext parent;
 
-	/** Environment used by this context */
+	/** context上下文环境对象 */
 	private ConfigurableEnvironment environment;
 
-	/** BeanFactoryPostProcessors to apply on refresh */
+	/** 在refresh()方法需要用到的BeanFactoryPostProcessor，是一个List */
 	private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors =
 			new ArrayList<BeanFactoryPostProcessor>();
 
-	/** System time in milliseconds when this context started */
+	/** context启动时的系统时间(毫秒) */
 	private long startupDate;
 
-	/** Flag that indicates whether this context is currently active */
+	/** context是否已激活的标记 */
 	private final AtomicBoolean active = new AtomicBoolean();
 
-	/** Flag that indicates whether this context has been closed already */
+	/** context是否已关闭的标记 */
 	private final AtomicBoolean closed = new AtomicBoolean();
 
-	/** Synchronization monitor for the "refresh" and "destroy" */
+	/** 在refresh和destroy方法中synchronized锁定对象 */
 	private final Object startupShutdownMonitor = new Object();
 
-	/** Reference to the JVM shutdown hook, if registered */
+	/** JVM shutdown钩子（shutdown时自动执行）, 前提是先要注册钩子*/
 	private Thread shutdownHook;
 
 	/** ResourcePatternResolver used by this context */
@@ -319,6 +322,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
+	 * 返回context对象的beanFactory转换成AutowireCapableBeanFactory
 	 * Return this context's internal bean factory as AutowireCapableBeanFactory,
 	 * if already available.
 	 * @see #getBeanFactory()
@@ -456,6 +460,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	//---------------------------------------------------------------------
 
 	/**
+	 * 设置parent引用，如果parent的Environment属性是ConfigurableEnvironment，则合并parent的Environment
 	 * Set the parent of this application context.
 	 * <p>The parent {@linkplain ApplicationContext#getEnvironment() environment} is
 	 * {@linkplain ConfigurableEnvironment#merge(ConfigurableEnvironment) merged} with
