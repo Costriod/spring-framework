@@ -420,6 +420,7 @@ public class BeanDefinitionParserDelegate {
 
 
 	/**
+	 * 解析bean标签，返回一个BeanDefinitionHolder，解析过程中出错可能返回null并上报错误
 	 * Parses the supplied {@code <bean>} element. May return {@code null}
 	 * if there were errors during parse. Errors are reported to the
 	 * {@link org.springframework.beans.factory.parsing.ProblemReporter}.
@@ -429,21 +430,24 @@ public class BeanDefinitionParserDelegate {
 	}
 
 	/**
+	 * 解析bean标签，返回一个BeanDefinitionHolder，解析过程中出错可能返回null并上报错误
 	 * Parses the supplied {@code <bean>} element. May return {@code null}
 	 * if there were errors during parse. Errors are reported to the
 	 * {@link org.springframework.beans.factory.parsing.ProblemReporter}.
 	 */
 	public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, BeanDefinition containingBean) {
-		String id = ele.getAttribute(ID_ATTRIBUTE);
-		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
+		String id = ele.getAttribute(ID_ATTRIBUTE);//bean标签id属性
+		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);//bean标签name属性
 
 		List<String> aliases = new ArrayList<String>();
-		if (StringUtils.hasLength(nameAttr)) {
+		if (StringUtils.hasLength(nameAttr)) {//如果name属性不是空字符串
+			//拆分name字符串，将"," ";" " "作为分隔符的内容拆分成一个数组，也就是说name属性配置的多个名称都作为这个bean的别名
 			String[] nameArr = StringUtils.tokenizeToStringArray(nameAttr, MULTI_VALUE_ATTRIBUTE_DELIMITERS);
-			aliases.addAll(Arrays.asList(nameArr));
+			aliases.addAll(Arrays.asList(nameArr));//作为别名
 		}
 
 		String beanName = id;
+		//spring的bean名字是id，如果bean没配置id，并且只配置了name，那么id默认是第一个别名，也就是name配置的第一个值
 		if (!StringUtils.hasText(beanName) && !aliases.isEmpty()) {
 			beanName = aliases.remove(0);
 			if (logger.isDebugEnabled()) {
@@ -455,12 +459,12 @@ public class BeanDefinitionParserDelegate {
 		if (containingBean == null) {
 			checkNameUniqueness(beanName, aliases, ele);
 		}
-
+		//解析bean标签，创建一个GenericBeanDefinition给基本属性赋值并返回
 		AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);
 		if (beanDefinition != null) {
 			if (!StringUtils.hasText(beanName)) {
 				try {
-					if (containingBean != null) {
+					if (containingBean != null) {//如果是内嵌的bean，即某个bean内部又定义了一个bean
 						beanName = BeanDefinitionReaderUtils.generateBeanName(
 								beanDefinition, this.readerContext.getRegistry(), true);
 					}
@@ -494,6 +498,7 @@ public class BeanDefinitionParserDelegate {
 	}
 
 	/**
+	 * 检查当前这个bean的id或alias是否已经被其他bean注册过，如果重复注册会报error
 	 * Validate that the specified bean name and aliases have not been used already
 	 * within the current level of beans element nesting.
 	 */
@@ -515,6 +520,7 @@ public class BeanDefinitionParserDelegate {
 	}
 
 	/**
+	 * 解析bean标签，生成一个GenericBeanDefinition返回，给基本属性赋值
 	 * Parse the bean definition itself, without regard to name or aliases. May return
 	 * {@code null} if problems occurred during the parsing of the bean definition.
 	 */
@@ -524,26 +530,30 @@ public class BeanDefinitionParserDelegate {
 		this.parseState.push(new BeanEntry(beanName));
 
 		String className = null;
-		if (ele.hasAttribute(CLASS_ATTRIBUTE)) {
+		if (ele.hasAttribute(CLASS_ATTRIBUTE)) {//获取bean标签class属性
 			className = ele.getAttribute(CLASS_ATTRIBUTE).trim();
 		}
 
 		try {
 			String parent = null;
-			if (ele.hasAttribute(PARENT_ATTRIBUTE)) {
+			if (ele.hasAttribute(PARENT_ATTRIBUTE)) {//获取bean标签parent属性
 				parent = ele.getAttribute(PARENT_ATTRIBUTE);
 			}
 			AbstractBeanDefinition bd = createBeanDefinition(className, parent);
-
+			//解析其他属性
 			parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);
 			bd.setDescription(DomUtils.getChildElementValueByTagName(ele, DESCRIPTION_ELEMENT));
-
+			//解析bean标签的meta子标签
 			parseMetaElements(ele, bd);
+			//解析bean标签的lookup-method子标签
 			parseLookupOverrideSubElements(ele, bd.getMethodOverrides());
+			//解析bean标签的replaced-method子标签
 			parseReplacedMethodSubElements(ele, bd.getMethodOverrides());
-
+			//解析bean标签的constructor-arg子标签
 			parseConstructorArgElements(ele, bd);
+			//解析bean标签的property子标签
 			parsePropertyElements(ele, bd);
+			//解析bean标签的qualifier子标签
 			parseQualifierElements(ele, bd);
 
 			bd.setResource(this.readerContext.getResource());
@@ -660,15 +670,16 @@ public class BeanDefinitionParserDelegate {
 	}
 
 	/**
-	 * Create a bean definition for the given class name and parent name.
-	 * @param className the name of the bean class
-	 * @param parentName the name of the bean's parent bean
-	 * @return the newly created bean definition
+	 * 通过指定的class名称以及parent bean名称创建新的BeanDefinition，本质上返回GenericBeanDefinition
+	 * 仅仅初始化了parent bean名称以及设置bean class名称
+	 * @param className 当前bean的class名称
+	 * @param parentName bean的parent对应的bean名称
+	 * @return 返回新创建的BeanDefinition
 	 * @throws ClassNotFoundException if bean class resolution was attempted but failed
 	 */
 	protected AbstractBeanDefinition createBeanDefinition(String className, String parentName)
 			throws ClassNotFoundException {
-
+		//创建一个GenericBeanDefinition，初始化parent bean名称以及设置class名称
 		return BeanDefinitionReaderUtils.createBeanDefinition(
 				parentName, className, this.readerContext.getBeanClassLoader());
 	}
@@ -1396,10 +1407,22 @@ public class BeanDefinitionParserDelegate {
 		return TRUE_VALUE.equals(value);
 	}
 
+	/**
+	 * 使用NamespaceHandler解析某些自定义的namespace
+	 * @param ele
+	 * @return
+	 */
 	public BeanDefinition parseCustomElement(Element ele) {
 		return parseCustomElement(ele, null);
 	}
 
+	/**
+	 * 使用NamespaceHandler解析某些自定义的namespace，底层实现原理就是通过扫描META-INF/spring.handlers文件，然后映射某些namespace以及对应的Handler类
+	 * 详情参考{@link DefaultNamespaceHandlerResolver#resolve(java.lang.String)}
+	 * @param ele
+	 * @param containingBd
+	 * @return
+	 */
 	public BeanDefinition parseCustomElement(Element ele, BeanDefinition containingBd) {
 		String namespaceUri = getNamespaceURI(ele);
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
@@ -1410,10 +1433,25 @@ public class BeanDefinitionParserDelegate {
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}
 
+	/**
+	 * 提取bean标签内部的一些attribute以及内嵌的node，然后针对这些attribute以及node，通过特定的NamespaceHandler进行装饰
+	 * 对BeanDefinitionHolder进行一定的装饰，底层用的还是NamespaceHandler机制，通过spring.handlers文件注册XML namespaceUrl与handler类的映射关系，找到对应的处理类对象
+	 * @param ele
+	 * @param definitionHolder
+	 * @return
+	 */
 	public BeanDefinitionHolder decorateBeanDefinitionIfRequired(Element ele, BeanDefinitionHolder definitionHolder) {
 		return decorateBeanDefinitionIfRequired(ele, definitionHolder, null);
 	}
 
+	/**
+	 * 提取bean标签内部的一些attribute以及内嵌的node，然后针对这些attribute以及node，通过特定的NamespaceHandler进行装饰
+	 * 对BeanDefinitionHolder进行一定的装饰，底层用的还是NamespaceHandler机制，通过spring.handlers文件注册XML namespaceUrl与handler类的映射关系，找到对应的处理类对象
+	 * @param ele
+	 * @param definitionHolder
+	 * @param containingBd
+	 * @return
+	 */
 	public BeanDefinitionHolder decorateBeanDefinitionIfRequired(
 			Element ele, BeanDefinitionHolder definitionHolder, BeanDefinition containingBd) {
 
@@ -1437,6 +1475,13 @@ public class BeanDefinitionParserDelegate {
 		return finalDefinition;
 	}
 
+	/**
+	 * 对BeanDefinitionHolder进行一定的装饰，底层用的还是NamespaceHandler机制，通过spring.handlers文件注册XML namespaceUrl与handler类的映射关系，找到对应的处理类对象
+	 * @param node
+	 * @param originalDef
+	 * @param containingBd
+	 * @return
+	 */
 	public BeanDefinitionHolder decorateIfRequired(
 			Node node, BeanDefinitionHolder originalDef, BeanDefinition containingBd) {
 
@@ -1515,14 +1560,29 @@ public class BeanDefinitionParserDelegate {
 		return (!StringUtils.hasLength(namespaceUri) || BEANS_NAMESPACE_URI.equals(namespaceUri));
 	}
 
+	/**
+	 * 如果node标签的namespace为http://www.springframework.org/schema/beans则返回true
+	 * @param node
+	 * @return
+	 */
 	public boolean isDefaultNamespace(Node node) {
 		return isDefaultNamespace(getNamespaceURI(node));
 	}
 
+	/**
+	 * 如果value == "" 或 value == "default"返回true
+	 * @param value
+	 * @return
+	 */
 	private boolean isDefaultValue(String value) {
 		return (DEFAULT_VALUE.equals(value) || "".equals(value));
 	}
 
+	/**
+	 * node标签节点是一个Element，并且【node的namespace是spring bean默认namespace 或者 node的父节点不是 spring bean默认namespace】
+	 * @param node
+	 * @return
+	 */
 	private boolean isCandidateElement(Node node) {
 		return (node instanceof Element && (isDefaultNamespace(node) || !isDefaultNamespace(node.getParentNode())));
 	}

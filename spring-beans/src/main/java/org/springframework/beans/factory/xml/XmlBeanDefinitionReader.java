@@ -294,7 +294,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 
 
 	/**
-	 * Load bean definitions from the specified XML file.
+	 * 载入XML配置文件里面的BeanDefinition
 	 * @param resource the resource descriptor for the XML file
 	 * @return the number of bean definitions found
 	 * @throws BeanDefinitionStoreException in case of loading or parsing errors
@@ -305,9 +305,8 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	}
 
 	/**
-	 * Load bean definitions from the specified XML file.
-	 * @param encodedResource the resource descriptor for the XML file,
-	 * allowing to specify an encoding to use for parsing the file
+	 * 核心方法，载入XML配置文件里面的BeanDefinition
+	 * @param encodedResource XML文件对应的resource对象, 可以通过指定的encoding格式解析xml文件
 	 * @return the number of bean definitions found
 	 * @throws BeanDefinitionStoreException in case of loading or parsing errors
 	 */
@@ -333,6 +332,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 				if (encodedResource.getEncoding() != null) {
 					inputSource.setEncoding(encodedResource.getEncoding());
 				}
+				//通过文件流创建InputSource，执行解析的核心逻辑
 				return doLoadBeanDefinitions(inputSource, encodedResource.getResource());
 			}
 			finally {
@@ -344,7 +344,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 					"IOException parsing XML document from " + encodedResource.getResource(), ex);
 		}
 		finally {
-			currentResources.remove(encodedResource);
+			currentResources.remove(encodedResource);//解析完之后释放
 			if (currentResources.isEmpty()) {
 				this.resourcesCurrentlyBeingLoaded.remove();
 			}
@@ -377,17 +377,19 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 
 
 	/**
-	 * Actually load bean definitions from the specified XML file.
-	 * @param inputSource the SAX InputSource to read from
-	 * @param resource the resource descriptor for the XML file
-	 * @return the number of bean definitions found
-	 * @throws BeanDefinitionStoreException in case of loading or parsing errors
+	 * 载入XML配置文件里面的BeanDefinition核心方法
+	 *
+	 * @param inputSource 需要读取的SAX InputSource
+	 * @param resource XML文件对应的resource对象
+	 * @return 返回载入成功的BeanDefinition数量
+	 * @throws BeanDefinitionStoreException xml解析失败则抛出该异常
 	 * @see #doLoadDocument
 	 * @see #registerBeanDefinitions
 	 */
 	protected int doLoadBeanDefinitions(InputSource inputSource, Resource resource)
 			throws BeanDefinitionStoreException {
 		try {
+			//解析一个xml，解析成一个Document并返回
 			Document doc = doLoadDocument(inputSource, resource);
 			return registerBeanDefinitions(doc, resource);
 		}
@@ -417,6 +419,11 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	}
 
 	/**
+	 * 载入一个xml文件配置，xml文件有一些dtd/xsd验证模式，所以spring用EntityResolver抽象出dtd/xsd的校验，
+	 * 一般有些dtd/xsd是https://开头的，在没联网情况下会出问题，所以spring通过BeansDtdResolver和PluggableSchemaResolver做了一个映射，
+	 * 只要是某些个特殊https://开头的dtd/xsd，则将其映射到本地的文件，这样就解决了某些无法联网情况下的dtd/xsd验证失败的问题
+	 * 其实底层原理就是spring内置了一些默认的schema，通过读取META_INF/spring.schemas或spring-beans-xxx.dtd，
+	 * 所以可以自定义xsd/dtd，并且扩展EntityResolver来实现自定义解析规则
 	 * Actually load the specified document using the configured DocumentLoader.
 	 * @param inputSource the SAX InputSource to read from
 	 * @param resource the resource descriptor for the XML file
@@ -431,6 +438,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	}
 
 	/**
+	 * 判断解析mode是dtd还是xsd
 	 * Determine the validation mode for the specified {@link Resource}.
 	 * If no explicit validation mode has been configured, then the validation
 	 * mode gets {@link #detectValidationMode detected} from the given resource.

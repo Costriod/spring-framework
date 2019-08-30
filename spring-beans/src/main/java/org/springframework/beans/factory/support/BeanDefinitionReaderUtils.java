@@ -44,8 +44,8 @@ public class BeanDefinitionReaderUtils {
 
 
 	/**
-	 * Create a new GenericBeanDefinition for the given parent name and class name,
-	 * eagerly loading the bean class if a ClassLoader has been specified.
+	 * 创建一个新的GenericBeanDefinition并且设置指定的parent bean名称以及class名称
+	 * 如果参数classLoader不为null的话，直接载入这个class，否则仅bd.setBeanClassName(className);
 	 * @param parentName the name of the parent bean, if any
 	 * @param className the name of the bean class, if any
 	 * @param classLoader the ClassLoader to use for loading bean classes
@@ -135,6 +135,7 @@ public class BeanDefinitionReaderUtils {
 	}
 
 	/**
+	 * 注册beanDefinition以及alias
 	 * Register the given bean definition with the given bean factory.
 	 * @param definitionHolder the bean definition including name and aliases
 	 * @param registry the bean factory to register with

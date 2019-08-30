@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -143,6 +144,7 @@ public interface ListableBeanFactory extends BeanFactory {
 	String[] getBeanNamesForType(Class<?> type);
 
 	/**
+	 * 参考 {@link DefaultListableBeanFactory#getBeanNamesForType(java.lang.Class, boolean, boolean)}
 	 * Return the names of beans matching the given type (including subclasses),
 	 * judging from either bean definitions or the value of {@code getObjectType}
 	 * in the case of FactoryBeans.

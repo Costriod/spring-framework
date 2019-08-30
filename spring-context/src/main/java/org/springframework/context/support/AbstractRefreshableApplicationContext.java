@@ -71,10 +71,10 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	 */
 	private Boolean allowCircularReferences;
 
-	/** Bean factory for this context */
+	/** context创建完beanFactory之后，然后内部维持beanFactory强引用 */
 	private DefaultListableBeanFactory beanFactory;
 
-	/** Synchronization monitor for the internal BeanFactory */
+	/** 并发操作内部BeanFactory时使用到的锁 */
 	private final Object beanFactoryMonitor = new Object();
 
 
@@ -116,27 +116,25 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 
 
 	/**
-	 * 创建beanFactory，载入BeanDefinition并注册到beanFactory，别名也会注册进去
-	 * This implementation performs an actual refresh of this context's underlying
-	 * bean factory, shutting down the previous bean factory (if any) and
-	 * initializing a fresh bean factory for the next phase of the context's lifecycle.
+	 * 本方法才是context的refreshBeanFactory的实现，关闭之前已有的beanFactory（如果有的话），创建并初始化一个新的beanFactory
+	 * <br>1.创建beanFactory，载入BeanDefinition并注册到beanFactory，别名也会注册进去
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
-		if (hasBeanFactory()) {//beanFactory不为null
-			destroyBeans();//销毁bean，默认是销毁所有单例bean，子类可重写
-			closeBeanFactory();//beanFactory指向null让GC回收
+		if (hasBeanFactory()) {//如果beanFactory不为null，也就是之前已有一个beanFactory
+			destroyBeans();//销毁beanFactory所有的单例bean，子类可重写
+			closeBeanFactory();//释放beanFactory，指向null让GC回收
 		}
 		try {
-			//创建一个beanFactory
+			//创建一个新的beanFactory
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
 			//id默认是类名+ @符号 + 16进制哈希码
 			//设置serializationId，并且缓存到map，不过value是WeakReference
 			beanFactory.setSerializationId(getId());
-			//设置是否允许beanDefinition被覆盖、是否允许循环引用
+			//定制化beanFactory，子类可以自定义实现，默认是设置是否允许beanDefinition被覆盖、是否允许循环引用
 			customizeBeanFactory(beanFactory);
 			//抽象方法，一般是AbstractXmlApplicationContext#loadBeanDefinitions
-			//载入一些配置，创建beanDefinition并注册到beanFactory里面（别名也会注册进去）
+			//解析xml里面的beanDefinition，并注册到beanFactory里面（别名也会注册进去）
 			loadBeanDefinitions(beanFactory);
 			synchronized (this.beanFactoryMonitor) {
 				this.beanFactory = beanFactory;
@@ -156,6 +154,10 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 		super.cancelRefresh(ex);
 	}
 
+	/**
+	 * 释放context内部的beanFactory，本方法在{@link #close()}方法中执行，必须等其他shutdown操作执行完之后才能接着执行closeBeanFactory()
+	 * <p>如果本方法执行出了异常，则不应该抛出异常，应该直接log输出异常信息
+	 */
 	@Override
 	protected final void closeBeanFactory() {
 		synchronized (this.beanFactoryMonitor) {
@@ -165,7 +167,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	}
 
 	/**
-	 * Determine whether this context currently holds a bean factory,
+	 * 判断当前context是否内部持有了一个beanFactory对象
 	 * i.e. has been refreshed at least once and not been closed yet.
 	 */
 	protected final boolean hasBeanFactory() {
@@ -194,14 +196,10 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	}
 
 	/**
-	 * Create an internal bean factory for this context.
-	 * Called for each {@link #refresh()} attempt.
-	 * <p>The default implementation creates a
-	 * {@link org.springframework.beans.factory.support.DefaultListableBeanFactory}
-	 * with the {@linkplain #getInternalParentBeanFactory() internal bean factory} of this
-	 * context's parent as parent bean factory. Can be overridden in subclasses,
-	 * for example to customize DefaultListableBeanFactory's settings.
-	 * @return the bean factory for this context
+	 * 创建一个新的BeanFactory（refresh执行的时候），默认是{@link org.springframework.beans.factory.support.DefaultListableBeanFactory}，
+	 * 并且创建DefaultListableBeanFactory时会把{@linkplain #getInternalParentBeanFactory() context自身原来的bean factory}作为入参传入进去，子类可重写该方法
+	 * <b>需要注意这里的new DefaultListableBeanFactory的参数将会作为DefaultListableBeanFactory的parentFactory</b>
+	 * @return bean factory，context会持有这个对象
 	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowBeanDefinitionOverriding
 	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowEagerClassLoading
 	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowCircularReferences
@@ -212,14 +210,9 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	}
 
 	/**
-	 * Customize the internal bean factory used by this context.
-	 * Called for each {@link #refresh()} attempt.
-	 * <p>The default implementation applies this context's
-	 * {@linkplain #setAllowBeanDefinitionOverriding "allowBeanDefinitionOverriding"}
-	 * and {@linkplain #setAllowCircularReferences "allowCircularReferences"} settings,
-	 * if specified. Can be overridden in subclasses to customize any of
-	 * {@link DefaultListableBeanFactory}'s settings.
-	 * @param beanFactory the newly created bean factory for this context
+	 * 定制化context的bean factory（refresh执行的时候），本方法默认是给{@link DefaultListableBeanFactory}设置allowBeanDefinitionOverriding和allowCircularReferences，
+	 * 前提条件是allowBeanDefinitionOverriding和allowCircularReferences不能为null，当然子类也可以扩展或覆盖父类实现
+	 * @param beanFactory context新创建的beanFactory
 	 * @see DefaultListableBeanFactory#setAllowBeanDefinitionOverriding
 	 * @see DefaultListableBeanFactory#setAllowCircularReferences
 	 * @see DefaultListableBeanFactory#setAllowRawInjectionDespiteWrapping
@@ -235,12 +228,10 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	}
 
 	/**
-	 * 抽象方法，由子类实现
-	 * Load bean definitions into the given bean factory, typically through
-	 * delegating to one or more bean definition readers.
-	 * @param beanFactory the bean factory to load bean definitions into
-	 * @throws BeansException if parsing of the bean definitions failed
-	 * @throws IOException if loading of bean definition files failed
+	 * 抽象方法，由子类实现，载入所有beanDefinition到beanFactory，通过一个或多个beanDefinitionReader来执行载入动作
+	 * @param beanFactory beanDefinition最终要载入到这个beanFactory
+	 * @throws BeansException 如果beanDefinition解析失败则抛出该异常
+	 * @throws IOException 如果beanDefinition文件读取失败则抛出该异常
 	 * @see org.springframework.beans.factory.support.PropertiesBeanDefinitionReader
 	 * @see org.springframework.beans.factory.xml.XmlBeanDefinitionReader
 	 */

@@ -111,7 +111,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 
 
 	/**
-	 * Register each bean definition within the given root {@code <beans/>} element.
+	 * 解析所有 {@code <beans/>} 标签下面的beanDefinition
 	 */
 	protected void doRegisterBeanDefinitions(Element root) {
 		// Any nested <beans> elements will cause recursion in this method. In
@@ -137,12 +137,14 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				}
 			}
 		}
-
+		//xml预处理，默认是什么都不干
 		preProcessXml(root);
+		//解析xml内部的BeanDefinition
 		parseBeanDefinitions(root, this.delegate);
+		//解析xml之后的处理，默认什么都不干
 		postProcessXml(root);
 
-		this.delegate = parent;
+		this.delegate = parent;//指向原来的parent引用
 	}
 
 	protected BeanDefinitionParserDelegate createDelegate(
@@ -154,6 +156,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	}
 
 	/**
+	 * 解析xml里面的"import", "alias", "bean"标签，这几个是spring默认的标签，其余的标签解析工作都走delegate.parseCustomElement(ele)
 	 * Parse the elements at the root level in the document:
 	 * "import", "alias", "bean".
 	 * @param root the DOM root element of the document
@@ -166,9 +169,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				if (node instanceof Element) {
 					Element ele = (Element) node;
 					if (delegate.isDefaultNamespace(ele)) {
-						parseDefaultElement(ele, delegate);
+						parseDefaultElement(ele, delegate);//解析spring默认namespace
 					}
-					else {
+					else {//自定义的handler处理自定义的namespace解析规则
 						delegate.parseCustomElement(ele);
 					}
 				}
@@ -180,16 +183,16 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	}
 
 	private void parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate) {
-		if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) {
+		if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) {//解析import标签
 			importBeanDefinitionResource(ele);
 		}
-		else if (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) {
+		else if (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) {//解析alias标签
 			processAliasRegistration(ele);
 		}
-		else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) {
+		else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) {//解析bean标签
 			processBeanDefinition(ele, delegate);
 		}
-		else if (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) {
+		else if (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) {//内嵌的beans标签
 			// recurse
 			doRegisterBeanDefinitions(ele);
 		}
@@ -292,15 +295,16 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	}
 
 	/**
+	 * 解析bean标签，并且解析过后做适当的装饰加工，然后注册，最后触发BeanComponentDefinition注册成功事件
 	 * Process the given bean element, parsing the bean definition
 	 * and registering it with the registry.
 	 */
 	protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {
-		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
+		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);//解析了一个bean标签，返回一个BeanDefinitionHolder
 		if (bdHolder != null) {
-			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);
+			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);//通过装饰器模式对BeanDefinitionHolder进行装饰
 			try {
-				// Register the final decorated instance.
+				// 注册
 				BeanDefinitionReaderUtils.registerBeanDefinition(bdHolder, getReaderContext().getRegistry());
 			}
 			catch (BeanDefinitionStoreException ex) {

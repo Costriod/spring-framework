@@ -86,9 +86,7 @@ public abstract class AbstractRefreshableConfigApplicationContext extends Abstra
 	}
 
 	/**
-	 * Return an array of resource locations, referring to the XML bean definition
-	 * files that this context should be built with. Can also include location
-	 * patterns, which will get resolved via a ResourcePatternResolver.
+	 * 返回包含配置文件路径的数组, 也允许包含通配符（通配符最终会被ResourcePatternResolver解析）
 	 * <p>The default implementation returns {@code null}. Subclasses can override
 	 * this to provide a set of resource locations to load bean definitions from.
 	 * @return an array of resource locations, or {@code null} if none

@@ -172,7 +172,12 @@ public abstract class AbstractBeanDefinitionReader implements EnvironmentCapable
 		return this.beanNameGenerator;
 	}
 
-
+	/**
+	 * 载入BeanDefinition的核心方法
+	 * @param resources 读取该resource资源文件的配置，解析成一个个beanDefinition
+	 * @return
+	 * @throws BeanDefinitionStoreException
+	 */
 	@Override
 	public int loadBeanDefinitions(Resource... resources) throws BeanDefinitionStoreException {
 		Assert.notNull(resources, "Resource array must not be null");
@@ -209,10 +214,11 @@ public abstract class AbstractBeanDefinitionReader implements EnvironmentCapable
 			throw new BeanDefinitionStoreException(
 					"Cannot import bean definitions from location [" + location + "]: no ResourceLoader available");
 		}
-
+		//resourceLoader 一般是 PathMatchingResourcePatternResolver
 		if (resourceLoader instanceof ResourcePatternResolver) {
 			// Resource pattern matching available.
 			try {
+				//通过ResourcePatternResolver解析location路径下的文件，返回一个Resource数组
 				Resource[] resources = ((ResourcePatternResolver) resourceLoader).getResources(location);
 				int loadCount = loadBeanDefinitions(resources);
 				if (actualResources != null) {

@@ -270,13 +270,21 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 		return getResourceLoader().getResource(location);
 	}
 
+    /**
+     * 通过classLoader.getResources(path)找出符合条件的resource目录，然后根据pattern找出对应resource目录下面的资源，最终返回如下格式的resource：
+     * 1.如果是自己本地资源，url格式为 [ file:/${projectDirPath}/target/classes/${directory}/${fileName} ]
+     * 2.如果是在第三方jar包内，url格式为 [ jar:file:/${jarDirPath}/demo-1.0-SNAPSHOT.jar!/${directory}/${fileName} ]
+     * @param locationPattern the location pattern to resolve
+     * @return
+     * @throws IOException
+     */
 	@Override
 	public Resource[] getResources(String locationPattern) throws IOException {
 		Assert.notNull(locationPattern, "Location pattern must not be null");
 		//判断是否是 classpath*: 作为locationPattern开头标记
 		if (locationPattern.startsWith(CLASSPATH_ALL_URL_PREFIX)) {
 			// a class path resource (multiple resources for same name possible)
-			// 判断locationPattern后缀是否包含通配符 * 或 ?
+			// 判断locationPattern后缀是否包含通配符 * 或 ?，下面用的是AntPathMatcher
 			if (getPathMatcher().isPattern(locationPattern.substring(CLASSPATH_ALL_URL_PREFIX.length()))) {
 				// a class path resource pattern
 				return findPathMatchingResources(locationPattern);
@@ -303,6 +311,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 	/**
+	 * 利用ClassLoader，扫描classpath下面所有符合条件的resource
 	 * Find all class location resources with the given location via the ClassLoader.
 	 * Delegates to {@link #doFindAllClassPathResources(String)}.
 	 * @param location the absolute path within the classpath
@@ -324,6 +333,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 	/**
+	 * 扫描某path下resource，本质上是利用ClassLoader.getResources(path), 可以读取本地资源以及第三方jar包的资源
 	 * Find all class location resources with the given path via the ClassLoader.
 	 * Called by {@link #findAllClassPathResources(String)}.
 	 * @param path the absolute path within the classpath (never a leading slash)
@@ -335,10 +345,12 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 		ClassLoader cl = getClassLoader();
 		Enumeration<URL> resourceUrls = (cl != null ? cl.getResources(path) : ClassLoader.getSystemResources(path));
 		while (resourceUrls.hasMoreElements()) {
+			//如果是自己本地资源，url格式为 [ file:/${projectDirPath}/target/classes/${directory}/ ]
+			//如果是在第三方jar包内，url格式为 [ jar:file:/${jarDirPath}/demo-1.0-SNAPSHOT.jar!/${directory}/ ]
 			URL url = resourceUrls.nextElement();
 			result.add(convertClassLoaderURL(url));
 		}
-		if ("".equals(path)) {
+		if ("".equals(path)) {//一般spring项目里面扫描的path不会是""
 			// The above result is likely to be incomplete, i.e. only containing file system references.
 			// We need to have pointers to each of the jar files on the classpath as well...
 			addAllClassLoaderJarRoots(cl, result);
@@ -475,6 +487,13 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 	/**
+     * 先通过getResources方法得到满足条件的resource，底层利用的是ClassLoader.getResources(path)实现，得到的resource一般是这几种格式：
+     * 1.如果是自己本地资源，url格式为 [ file:/${projectDirPath}/target/classes/${directory}/ ]
+     * 2.如果是在第三方jar包内，url格式为 [ jar:file:/${jarDirPath}/demo-1.0-SNAPSHOT.jar!/${directory}/ ]
+     *
+     * 上面getResources返回的仅仅是一些目录结构，真正提取目录中合适的class则是在doFindPathMatchingFileResources方法里面，最终返回如下格式的resource给上层
+     * 1.如果是自己本地资源，url格式为 [ file:/${projectDirPath}/target/classes/${directory}/${fileName} ]
+     * 2.如果是在第三方jar包内，url格式为 [ jar:file:/${jarDirPath}/demo-1.0-SNAPSHOT.jar!/${directory}/${fileName} ]
 	 * Find all resources that match the given location pattern via the
 	 * Ant-style PathMatcher. Supports resources in jar files and zip files
 	 * and in the file system.
@@ -486,9 +505,9 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	 * @see org.springframework.util.PathMatcher
 	 */
 	protected Resource[] findPathMatchingResources(String locationPattern) throws IOException {
-		String rootDirPath = determineRootDir(locationPattern);
-		String subPattern = locationPattern.substring(rootDirPath.length());
-		Resource[] rootDirResources = getResources(rootDirPath);
+		String rootDirPath = determineRootDir(locationPattern);//确定locationPattern的根路径
+		String subPattern = locationPattern.substring(rootDirPath.length());//locationPattern的后缀，locationPattern = rootDirPath + subPattern
+		Resource[] rootDirResources = getResources(rootDirPath);//递归getResources方法，真正提取里面符合条件的class是下面的doFindPathMatchingFileResources方法
 		Set<Resource> result = new LinkedHashSet<Resource>(16);
 		for (Resource rootDirResource : rootDirResources) {
 			rootDirResource = resolveRootDirResource(rootDirResource);

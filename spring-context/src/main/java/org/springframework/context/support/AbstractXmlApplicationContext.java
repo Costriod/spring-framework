@@ -73,14 +73,14 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	/**
 	 * 1.初始化BeanDefinitionReader
 	 * 2.BeanDefinitionReader载入BeanDefinition
-	 * Loads the bean definitions via an XmlBeanDefinitionReader.
+	 * 通过 XmlBeanDefinitionReader 载入BeanDefinitio.
 	 * @see org.springframework.beans.factory.xml.XmlBeanDefinitionReader
 	 * @see #initBeanDefinitionReader
 	 * @see #loadBeanDefinitions
 	 */
 	@Override
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
-		// Create a new XmlBeanDefinitionReader for the given BeanFactory.
+		// 通过context内部的BeanFactory来创建一个新的XmlBeanDefinitionReader对象
 		XmlBeanDefinitionReader beanDefinitionReader = new XmlBeanDefinitionReader(beanFactory);
 
 		// Configure the bean definition reader with this context's
@@ -99,11 +99,10 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	}
 
 	/**
-	 * Initialize the bean definition reader used for loading the bean
-	 * definitions of this context. Default implementation is empty.
-	 * <p>Can be overridden in subclasses, e.g. for turning off XML validation
-	 * or using a different XmlBeanDefinitionParser implementation.
-	 * @param reader the bean definition reader used by this context
+	 * 初始化BeanDefinitionReader. Default implementation is empty.
+	 * <p>本方法可以被子类覆盖, e.g. 例如关闭 XML 校验或者使用另一种不同的XmlBeanDefinitionParser实现
+	 *
+	 * @param reader BeanDefinitionReader
 	 * @see org.springframework.beans.factory.xml.XmlBeanDefinitionReader#setDocumentReaderClass
 	 */
 	protected void initBeanDefinitionReader(XmlBeanDefinitionReader reader) {
@@ -134,11 +133,9 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	}
 
 	/**
-	 * Return an array of Resource objects, referring to the XML bean definition
-	 * files that this context should be built with.
-	 * <p>The default implementation returns {@code null}. Subclasses can override
-	 * this to provide pre-built Resource objects rather than location Strings.
-	 * @return an array of Resource objects, or {@code null} if none
+	 * 返回一个Resource数组对象，一般是指XML配置文件，本方法目的是将一些文件路径转换成一个个Resource返回
+	 * <p>方法默认返回null，子类可覆盖本方法
+	 * @return Resource数组对象
 	 * @see #getConfigLocations()
 	 */
 	protected Resource[] getConfigResources() {
