@@ -776,6 +776,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	}
 
 	/**
+	 * 这里存放的是lookup-method和replace-method配置
 	 * Return information about methods to be overridden by the IoC
 	 * container. This will be empty if there are no method overrides.
 	 * <p>Never returns {@code null}.
@@ -860,6 +861,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	/**
 	 * Return whether this bean definition is 'synthetic', that is,
 	 * not defined by the application itself.
+	 * synthetic的意思就是bean不是程序本身定义的，而是人工合成的。比如我们AOP动态代理生成的bean
 	 */
 	public boolean isSynthetic() {
 		return this.synthetic;
@@ -974,7 +976,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 			Set<MethodOverride> overrides = methodOverrides.getOverrides();
 			synchronized (overrides) {
 				for (MethodOverride mo : overrides) {
-					prepareMethodOverride(mo);
+					prepareMethodOverride(mo);//检查对应的方法是否存在
 				}
 			}
 		}

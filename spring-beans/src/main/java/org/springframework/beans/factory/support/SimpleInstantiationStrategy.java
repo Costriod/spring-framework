@@ -104,6 +104,18 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 		throw new UnsupportedOperationException("Method Injection not supported in SimpleInstantiationStrategy");
 	}
 
+	/**
+	 * 1.bean的Constructor注入，如果bean.getMethodOverrides()不为空(也就是没有lookup-method或replace-method配置)，则直接通过构造函数注入并创建新的bean
+	 * 2.如果设置了lookup-method或replace-method，那么执行的是cglib动态生成代理类，然后再实例化代理对象，具体参考CglibSubclassingInstantiationStrategy的内部类CglibSubclassCreator
+	 * @param bd the bean definition
+	 * @param beanName the name of the bean when it's created in this context.
+	 * The name can be {@code null} if we're autowiring a bean which doesn't
+	 * belong to the factory.
+	 * @param owner the owning BeanFactory
+	 * @param ctor the constructor to use
+	 * @param args the constructor arguments to apply
+	 * @return
+	 */
 	@Override
 	public Object instantiate(RootBeanDefinition bd, String beanName, BeanFactory owner,
 			final Constructor<?> ctor, Object... args) {

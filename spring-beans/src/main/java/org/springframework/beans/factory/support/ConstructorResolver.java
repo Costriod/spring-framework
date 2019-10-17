@@ -86,6 +86,7 @@ class ConstructorResolver {
 
 
 	/**
+	 * 通过Constructor构造函数注入并创建bean对象，如果设置了lookup-method或replace-method，则通过cglib动态创建代理类，以及初始化代理类对象bean
 	 * "autowire constructor" (with constructor arguments by type) behavior.
 	 * Also applied if explicit constructor argument values are specified,
 	 * matching all remaining arguments with beans from the bean factory.
@@ -255,7 +256,7 @@ class ConstructorResolver {
 
 		try {
 			Object beanInstance;
-
+			//通过Constructor构造函数注入并创建bean对象，如果设置了lookup-method或replace-method，则通过cglib动态创建代理类，以及初始化代理类对象bean
 			if (System.getSecurityManager() != null) {
 				final Constructor<?> ctorToUse = constructorToUse;
 				final Object[] argumentsToUse = argsToUse;
@@ -339,6 +340,7 @@ class ConstructorResolver {
 	}
 
 	/**
+	 * 这个方法本质上是给静态工厂 或 实例工厂初始化bean，返回一个BeanWrapper对象，BeanWrapper内部维护了这个bean的引用
 	 * Instantiate the bean using a named factory method. The method may be static, if the
 	 * bean definition parameter specifies a class, rather than a "factory-bean", or
 	 * an instance variable on a factory object itself configured using Dependency Injection.
@@ -379,7 +381,7 @@ class ConstructorResolver {
 						"through the creation of the factory bean that its bean definition points to");
 			}
 			factoryClass = factoryBean.getClass();
-			isStatic = false;
+			isStatic = false;//非静态工厂
 		}
 		else {
 			// It's a static factory method on the bean class.
@@ -389,7 +391,7 @@ class ConstructorResolver {
 			}
 			factoryBean = null;
 			factoryClass = mbd.getBeanClass();
-			isStatic = true;
+			isStatic = true;//静态工厂
 		}
 
 		Method factoryMethodToUse = null;
@@ -402,7 +404,7 @@ class ConstructorResolver {
 		else {
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
-				factoryMethodToUse = (Method) mbd.resolvedConstructorOrFactoryMethod;
+				factoryMethodToUse = (Method) mbd.resolvedConstructorOrFactoryMethod;//找到工厂方法
 				if (factoryMethodToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached factory method...
 					argsToUse = mbd.resolvedConstructorArguments;
@@ -412,6 +414,7 @@ class ConstructorResolver {
 				}
 			}
 			if (argsToResolve != null) {
+				//读取beanDefinition缓存的参数
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, factoryMethodToUse, argsToResolve);
 			}
 		}
@@ -419,12 +422,13 @@ class ConstructorResolver {
 		if (factoryMethodToUse == null || argsToUse == null) {
 			// Need to determine the factory method...
 			// Try all methods with this name to see if they match the given arguments.
+			//如果是CGLIB动态代理类，则返回其原始类型
 			factoryClass = ClassUtils.getUserClass(factoryClass);
 
-			Method[] rawCandidates = getCandidateMethods(factoryClass, mbd);
+			Method[] rawCandidates = getCandidateMethods(factoryClass, mbd);//找到class所有method
 			List<Method> candidateSet = new ArrayList<Method>();
 			for (Method candidate : rawCandidates) {
-				if (Modifier.isStatic(candidate.getModifiers()) == isStatic && mbd.isFactoryMethod(candidate)) {
+				if (Modifier.isStatic(candidate.getModifiers()) == isStatic && mbd.isFactoryMethod(candidate)) {//筛选出工厂方法
 					candidateSet.add(candidate);
 				}
 			}
@@ -432,7 +436,7 @@ class ConstructorResolver {
 			AutowireUtils.sortFactoryMethods(candidates);
 
 			ConstructorArgumentValues resolvedValues = null;
-			boolean autowiring = (mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE_CONSTRUCTOR);
+			boolean autowiring = (mbd.getResolvedAutowireMode() == RootBeanDefinition.AUTOWIRE_CONSTRUCTOR);//构造函数注入
 			int minTypeDiffWeight = Integer.MAX_VALUE;
 			Set<Method> ambiguousFactoryMethods = null;
 

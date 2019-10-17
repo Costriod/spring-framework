@@ -791,6 +791,7 @@ public abstract class ClassUtils {
 	}
 
 	/**
+	 * 如果是用户定义的类，则直接返回，如果是CGLIB动态生成的代理类，则返回代理类的父类
 	 * Return the user-defined class for the given class: usually simply the given
 	 * class, but the original class in case of a CGLIB-generated subclass.
 	 * @param clazz the class to check
