@@ -506,6 +506,7 @@ public abstract class ClassUtils {
 	}
 
 	/**
+	 * 把这种com.xxx.xxx格式的包名转成目录格式：com/xxx/xxx
 	 * Convert a "."-based fully qualified class name to a "/"-based resource path.
 	 * @param className the fully qualified class name
 	 * @return the corresponding resource path, pointing to the class

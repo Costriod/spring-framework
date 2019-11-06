@@ -111,6 +111,7 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 	 */
 	@Override
 	public NamespaceHandler resolve(String namespaceUri) {
+		//这里注册了namespace与handlerClass的映射关系，具体参考每个spring.handlers文件的内容
 		Map<String, Object> handlerMappings = getHandlerMappings();
 		Object handlerOrClassName = handlerMappings.get(namespaceUri);
 		if (handlerOrClassName == null) {
@@ -119,7 +120,7 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 		else if (handlerOrClassName instanceof NamespaceHandler) {
 			return (NamespaceHandler) handlerOrClassName;
 		}
-		else {
+		else {//如果handlerOrClassName是String类型的class名称
 			String className = (String) handlerOrClassName;
 			try {
 				Class<?> handlerClass = ClassUtils.forName(className, this.classLoader);
@@ -127,8 +128,11 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 					throw new FatalBeanException("Class [" + className + "] for namespace [" + namespaceUri +
 							"] does not implement the [" + NamespaceHandler.class.getName() + "] interface");
 				}
+				//通过newInstance创建一个对象
 				NamespaceHandler namespaceHandler = (NamespaceHandler) BeanUtils.instantiateClass(handlerClass);
+				//执行init方法，具体参考spring.handlers文件里面每个class的init方法
 				namespaceHandler.init();
+				//将namespace与namespaceHandler写入map，那么原来的那个value就从String类型的className变成了真正的namespaceHandler对象
 				handlerMappings.put(namespaceUri, namespaceHandler);
 				return namespaceHandler;
 			}
@@ -144,6 +148,13 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 	}
 
 	/**
+	 * 实现原理就是从每个jar包（严格意义上应该是classpath下面）下面的META-INF/spring.handlers文件读取配置信息，举个例子，spring-tx包下面的META-INF/spring.handlers文件内容如下：
+	 * http\://www.springframework.org/schema/tx=org.springframework.transaction.config.TxNamespaceHandler
+	 *
+	 * 这里就是将这部分配置以key-value形式载入，key就是http\://www.springframework.org/schema/tx 这是一个namespace，value就是NamespaceHandler类
+	 * 比如常用的<tx:advice />，第一个tx代表引用了http\://www.springframework.org/schema/tx的tx标签，
+	 * advice表示需要从org.springframework.transaction.config.TxNamespaceHandler找出解析advice的解析类，从源码可以得知是TxAdviceBeanDefinitionParser类
+	 *
 	 * Load the specified NamespaceHandler mappings lazily.
 	 */
 	private Map<String, Object> getHandlerMappings() {
@@ -176,6 +187,10 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 	}
 
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	public String toString() {
 		return "NamespaceHandlerResolver using mappings " + getHandlerMappings();

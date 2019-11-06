@@ -134,6 +134,7 @@ public class AnnotationConfigUtils {
 	}
 
 	/**
+	 * 往registry里面注册一些默认的PostProcessor
 	 * Register all relevant annotation post processors in the given registry.
 	 * @param registry the registry to operate on
 	 * @param source the configuration source element (already extracted)
@@ -263,12 +264,14 @@ public class AnnotationConfigUtils {
 
 	static BeanDefinitionHolder applyScopedProxyMode(
 			ScopeMetadata metadata, BeanDefinitionHolder definition, BeanDefinitionRegistry registry) {
-
+		//读取proxyMode
 		ScopedProxyMode scopedProxyMode = metadata.getScopedProxyMode();
-		if (scopedProxyMode.equals(ScopedProxyMode.NO)) {
+		if (scopedProxyMode.equals(ScopedProxyMode.NO)) {//如果是NO，也就是不需要代理，直接返回
 			return definition;
 		}
+		//如果是cglib代理
 		boolean proxyTargetClass = scopedProxyMode.equals(ScopedProxyMode.TARGET_CLASS);
+		//返回被代理后的beanDefinition
 		return ScopedProxyCreator.createScopedProxy(definition, registry, proxyTargetClass);
 	}
 

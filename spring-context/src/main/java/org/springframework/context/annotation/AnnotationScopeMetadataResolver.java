@@ -73,7 +73,12 @@ public class AnnotationScopeMetadataResolver implements ScopeMetadataResolver {
 		this.scopeAnnotationType = scopeAnnotationType;
 	}
 
-
+	/**
+	 * 1.如果不是AnnotatedBeanDefinition类型，则直接返回一个new ScopeMetadata()
+	 * 2.如果是AnnotatedBeanDefinition类型，则找出class上面标注的@Scope注解，如果有这个注解则解析@Scope注解的value和proxyMode属性，最后返回metadata
+	 * @param definition the target bean definition
+	 * @return
+	 */
 	@Override
 	public ScopeMetadata resolveScopeMetadata(BeanDefinition definition) {
 		ScopeMetadata metadata = new ScopeMetadata();

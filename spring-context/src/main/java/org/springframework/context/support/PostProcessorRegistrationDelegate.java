@@ -37,6 +37,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.MergedBeanDefinitionPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.core.OrderComparator;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
@@ -315,7 +316,11 @@ class PostProcessorRegistrationDelegate {
 	}
 
 	/**
-	 * Invoke the given BeanDefinitionRegistryPostProcessor beans.
+	 * 实现了BeanDefinitionRegistryPostProcessor的类目前只有ConfigurationClassPostProcessor，
+	 * ConfigurationClassPostProcessor是对@Configuration进行解析，这个ConfigurationClassPostProcessor类注册到spring里面的
+	 * 前提是配置了<context:annotation-config />或者<context:component-scan base-package="" />，详情参考：
+	 * {@link AnnotationConfigUtils#registerAnnotationConfigProcessors(org.springframework.beans.factory.support.BeanDefinitionRegistry, java.lang.Object)}
+	 * 上述registerAnnotationConfigProcessors方法注册了一些默认PostProcessor，这是在载入beanDefinition之后执行的
 	 */
 	private static void invokeBeanDefinitionRegistryPostProcessors(
 			Collection<? extends BeanDefinitionRegistryPostProcessor> postProcessors, BeanDefinitionRegistry registry) {

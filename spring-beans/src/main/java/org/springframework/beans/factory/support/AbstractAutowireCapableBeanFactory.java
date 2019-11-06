@@ -999,6 +999,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	}
 
 	/**
+	 * spring-context会自动注册一些BeanDefinitionPostProcessor，详情参考getBeanPostProcessors()方法，举个例子AutowiredAnnotationBeanPostProcessor是用来解析@Autowired注解的
 	 * Apply MergedBeanDefinitionPostProcessors to the specified bean definition,
 	 * invoking their {@code postProcessMergedBeanDefinition} methods.
 	 * @param mbd the merged bean definition for the bean
@@ -1258,6 +1259,10 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
 				if (bp instanceof InstantiationAwareBeanPostProcessor) {
+					/*
+					 * 一般InstantiationAwareBeanPostProcessor接口的实现类里面常用的有AutowiredAnnotationBeanPostProcessor，RequiredAnnotationBeanPostProcessor
+					 * 但是这里这个InstantiationAwareBeanPostProcessor.postProcessAfterInstantiation(bean, beanName)方法是直接返回true的（每个实现类都是直接返回true）
+					 */
 					InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
 					if (!ibp.postProcessAfterInstantiation(bw.getWrappedInstance(), beanName)) {
 						continueWithPropertyPopulation = false;
@@ -1297,6 +1302,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				for (BeanPostProcessor bp : getBeanPostProcessors()) {
 					if (bp instanceof InstantiationAwareBeanPostProcessor) {
 						InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+						/*
+						 * AutowiredAnnotationBeanPostProcessor处理@Autowoired注解
+						 * CommonAnnotationBeanPostProcessor处理@Resource注解
+						 * RequiredAnnotationBeanPostProcessor处理@Required注解
+						 */
 						pvs = ibp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
 						if (pvs == null) {
 							return;

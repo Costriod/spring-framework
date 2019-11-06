@@ -269,25 +269,36 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
 		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<BeanDefinitionHolder>();
 		for (String basePackage : basePackages) {
+			//先扫描特定包下的class。然后利用asm技术读取class。最后TypeFilter进行筛选符合条件的class，最后返回beanDefinition列表
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
 			for (BeanDefinition candidate : candidates) {
+				//scopeMetadataResolver就是解析bean作用域的，比如某个bean配置了@Scope注解，那么就是在这里解析
 				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
 				candidate.setScope(scopeMetadata.getScopeName());
 				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
 				if (candidate instanceof AbstractBeanDefinition) {
+					//设置beanDefinition的一些初始值
 					postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
 				}
+				//解析bean的@Lazy @DependsOn @Primary @Role @Description注解
 				if (candidate instanceof AnnotatedBeanDefinition) {
 					AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
 				}
+				//检查beanName是否与已有的bean重名
 				if (checkCandidate(beanName, candidate)) {
 					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+					//如果设置了proxyMode，那么这里有可能返回被代理后的beanDefinition
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
 					registerBeanDefinition(definitionHolder, this.registry);
 				}
 			}
+		}
+		for (BeanDefinitionHolder holder : beanDefinitions) {
+			System.out.print(holder.getBeanName());
+			System.out.print(",");
+			System.out.println(holder.getBeanDefinition().getBeanClassName());
 		}
 		return beanDefinitions;
 	}
@@ -299,13 +310,16 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	 * @param beanName the generated bean name for the given bean
 	 */
 	protected void postProcessBeanDefinition(AbstractBeanDefinition beanDefinition, String beanName) {
+		//设置beanDefinition一些公共的基础信息
 		beanDefinition.applyDefaults(this.beanDefinitionDefaults);
+		//如果在beans标签里面配置了default-autowire-candidates，那么这里的autowireCandidatePatterns就是default-autowire-candidates的值
 		if (this.autowireCandidatePatterns != null) {
 			beanDefinition.setAutowireCandidate(PatternMatchUtils.simpleMatch(this.autowireCandidatePatterns, beanName));
 		}
 	}
 
 	/**
+	 * 注册beanDefinition以及alias
 	 * Register the specified bean with the given registry.
 	 * <p>Can be overridden in subclasses, e.g. to adapt the registration
 	 * process or to register further bean definitions for each scanned bean.

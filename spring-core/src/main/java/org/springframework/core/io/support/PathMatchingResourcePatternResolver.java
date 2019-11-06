@@ -271,7 +271,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
     /**
-     * 通过classLoader.getResources(path)找出符合条件的resource目录，然后根据pattern找出对应resource目录下面的资源，最终返回如下格式的resource：
+     * 原理就是通过classLoader.getResources(path)找出符合条件的resource目录，然后根据pattern找出对应resource目录下面的资源，最终返回如下格式的resource：
      * 1.如果是自己本地资源，url格式为 [ file:/${projectDirPath}/target/classes/${directory}/${fileName} ]
      * 2.如果是在第三方jar包内，url格式为 [ jar:file:/${jarDirPath}/demo-1.0-SNAPSHOT.jar!/${directory}/${fileName} ]
      * @param locationPattern the location pattern to resolve
@@ -512,19 +512,19 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 		for (Resource rootDirResource : rootDirResources) {
 			rootDirResource = resolveRootDirResource(rootDirResource);
 			URL rootDirUrl = rootDirResource.getURL();
-			if (equinoxResolveMethod != null) {
+			if (equinoxResolveMethod != null) {//OSGI 一般我们用不到
 				if (rootDirUrl.getProtocol().startsWith("bundle")) {
 					rootDirUrl = (URL) ReflectionUtils.invokeMethod(equinoxResolveMethod, null, rootDirUrl);
 					rootDirResource = new UrlResource(rootDirUrl);
 				}
 			}
-			if (rootDirUrl.getProtocol().startsWith(ResourceUtils.URL_PROTOCOL_VFS)) {
+			if (rootDirUrl.getProtocol().startsWith(ResourceUtils.URL_PROTOCOL_VFS)) {//vfs虚拟文件系统
 				result.addAll(VfsResourceMatchingDelegate.findMatchingResources(rootDirUrl, subPattern, getPathMatcher()));
 			}
-			else if (ResourceUtils.isJarURL(rootDirUrl) || isJarResource(rootDirResource)) {
+			else if (ResourceUtils.isJarURL(rootDirUrl) || isJarResource(rootDirResource)) {//资源在jar包里面
 				result.addAll(doFindPathMatchingJarResources(rootDirResource, rootDirUrl, subPattern));
 			}
-			else {
+			else {//从本地读取资源，比如从当前项目/target/classes里面读取
 				result.addAll(doFindPathMatchingFileResources(rootDirResource, subPattern));
 			}
 		}
@@ -594,6 +594,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 	/**
+	 * 从jar或war包读取该包下所有匹配subPattern的resources
 	 * Find all resources in jar files that match the given location pattern
 	 * via the Ant-style PathMatcher.
 	 * @param rootDirResource the root directory as Resource

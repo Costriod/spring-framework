@@ -49,9 +49,24 @@ import org.springframework.util.MultiValueMap;
 public class AnnotationMetadataReadingVisitor extends ClassMetadataReadingVisitor implements AnnotationMetadata {
 
 	protected final ClassLoader classLoader;
-
+	/**
+	 * 存储了某个class的所有注解信息，如：org.springframework.context.annotation.Configuration、org.springframework.stereotype.Component等
+	 */
 	protected final Set<String> annotationSet = new LinkedHashSet<String>(4);
-
+	/**
+	 * 存储某个class的注解的注解，key是注解全名，value是这个注解类内部包含的注解，如：
+	 * {
+	 *     "org.springframework.context.annotation.Configuration": [
+	 *         "org.springframework.stereotype.Component"
+	 *     ],
+	 *     "org.springframework.boot.autoconfigure.SpringBootApplication": [
+	 *         "org.springframework.context.annotation.Configuration",
+	 *         "org.springframework.stereotype.Component",
+	 *         "org.springframework.stereotype.Indexed"
+	 *     ]
+	 * }
+	 * 因为class可能有多个注解，同样的每个注解类内部也有若干个注解
+	 */
 	protected final Map<String, Set<String>> metaAnnotationMap = new LinkedHashMap<String, Set<String>>(4);
 
 	/**

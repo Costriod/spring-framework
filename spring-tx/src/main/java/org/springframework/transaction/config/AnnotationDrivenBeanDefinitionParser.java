@@ -16,6 +16,8 @@
 
 package org.springframework.transaction.config;
 
+import org.springframework.aop.framework.autoproxy.InfrastructureAdvisorAutoProxyCreator;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.w3c.dom.Element;
 
 import org.springframework.aop.config.AopNamespaceUtils;
@@ -51,6 +53,7 @@ import org.springframework.transaction.interceptor.TransactionInterceptor;
 class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 
 	/**
+	 * 这里就是解析{@code <tx:annotation-driven/>} 标签
 	 * Parses the {@code <tx:annotation-driven/>} tag. Will
 	 * {@link AopNamespaceUtils#registerAutoProxyCreatorIfNecessary register an AutoProxyCreator}
 	 * with the container as necessary.
@@ -99,7 +102,15 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 	 * Inner class to just introduce an AOP framework dependency when actually in proxy mode.
 	 */
 	private static class AopAutoProxyConfigurer {
-
+		/**
+		 * 注册这么一些bean：
+		 * {@link InfrastructureAdvisorAutoProxyCreator}
+		 * {@link AnnotationTransactionAttributeSource}
+		 * {@link TransactionInterceptor}
+		 * {@link BeanFactoryTransactionAttributeSourceAdvisor}
+		 * @param element
+		 * @param parserContext
+		 */
 		public static void configureAutoProxyCreator(Element element, ParserContext parserContext) {
 			AopNamespaceUtils.registerAutoProxyCreatorIfNecessary(parserContext, element);
 

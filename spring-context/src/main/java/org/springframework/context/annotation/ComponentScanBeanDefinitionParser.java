@@ -61,7 +61,9 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 	private static final String ANNOTATION_CONFIG_ATTRIBUTE = "annotation-config";
 
 	private static final String NAME_GENERATOR_ATTRIBUTE = "name-generator";
-
+	/**
+	 * scope-resolver不能和scoped-proxy同时使用
+	 */
 	private static final String SCOPE_RESOLVER_ATTRIBUTE = "scope-resolver";
 
 	private static final String SCOPED_PROXY_ATTRIBUTE = "scoped-proxy";
@@ -74,22 +76,40 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 
 	private static final String FILTER_EXPRESSION_ATTRIBUTE = "expression";
 
-
+	/**
+	 * 解析标签入口，默认标签的annotation-config=true，use-default-filters=true
+	 * @param element the element that is to be parsed into one or more {@link BeanDefinition BeanDefinitions}
+	 * @param parserContext the object encapsulating the current state of the parsing process;
+	 * provides access to a {@link org.springframework.beans.factory.support.BeanDefinitionRegistry}
+	 * @return
+	 */
 	@Override
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		//找出base-package属性
 		String basePackage = element.getAttribute(BASE_PACKAGE_ATTRIBUTE);
+		//替换${some-param}占位符，如果这个some-param占位符key没有对应的value，那么就会原封不动返回${some-param}
 		basePackage = parserContext.getReaderContext().getEnvironment().resolvePlaceholders(basePackage);
+		//拆分字符串，根据分隔符拆分，base-package属性可以设置多个，用 "," ";" "\t" "\n"任意一个分隔符即可
 		String[] basePackages = StringUtils.tokenizeToStringArray(basePackage,
 				ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
 
 		// Actually scan for bean definitions and register them.
+		// 创建scanner并初始化一些属性
 		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
+		//扫描包核心方法
 		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
+		//通知那些ReaderEventListener，同时还会注册一些默认的PostProcessor
 		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
 
 		return null;
 	}
 
+	/**
+	 * 创建一个ClassPathBeanDefinitionScanner
+	 * @param parserContext
+	 * @param element
+	 * @return
+	 */
 	protected ClassPathBeanDefinitionScanner configureScanner(ParserContext parserContext, Element element) {
 		boolean useDefaultFilters = true;
 		if (element.hasAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE)) {
@@ -98,6 +118,7 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 
 		// Delegate bean definition registration to scanner class.
 		ClassPathBeanDefinitionScanner scanner = createScanner(parserContext.getReaderContext(), useDefaultFilters);
+		//这里就是设置beanDefinition的默认属性，只要这个scanner扫描到beanDefinition，就给这些个beanDefinition设置这部分默认属性
 		scanner.setBeanDefinitionDefaults(parserContext.getDelegate().getBeanDefinitionDefaults());
 		scanner.setAutowireCandidatePatterns(parserContext.getDelegate().getAutowireCandidatePatterns());
 
@@ -106,6 +127,7 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		}
 
 		try {
+			//设置name-generator，这是给bean命名的，前提是需要在bean标签指定name-generator属性
 			parseBeanNameGenerator(element, scanner);
 		}
 		catch (Exception ex) {
@@ -113,12 +135,13 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		}
 
 		try {
+			//设置scoped-proxy或scope-resolver
 			parseScope(element, scanner);
 		}
 		catch (Exception ex) {
 			parserContext.getReaderContext().error(ex.getMessage(), parserContext.extractSource(element), ex.getCause());
 		}
-
+		//解析<context:include-filter>和<context:exclude-filter>标签，然后注册TypeFilter到scanner里面
 		parseTypeFilters(element, scanner, parserContext);
 
 		return scanner;
@@ -129,6 +152,14 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 				readerContext.getEnvironment(), readerContext.getResourceLoader());
 	}
 
+	/**
+	 * 自定义的component-scan扫描结束之后，这里会判断xml标签是否有配置annotation-config属性，如果annotationConfig为true，
+	 * 那么这里会执行{@link AnnotationConfigUtils#registerAnnotationConfigProcessors(org.springframework.beans.factory.support.BeanDefinitionRegistry, java.lang.Object)}，
+	 * 这个方法会注册一些默认的PostProcessor到registry里面，比如ConfigurationClassPostProcessor
+	 * @param readerContext
+	 * @param beanDefinitions
+	 * @param element
+	 */
 	protected void registerComponents(
 			XmlReaderContext readerContext, Set<BeanDefinitionHolder> beanDefinitions, Element element) {
 
@@ -145,6 +176,7 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 			annotationConfig = Boolean.valueOf(element.getAttribute(ANNOTATION_CONFIG_ATTRIBUTE));
 		}
 		if (annotationConfig) {
+			//注意这一段代码里注册一些默认的PostProcessor
 			Set<BeanDefinitionHolder> processorDefinitions =
 					AnnotationConfigUtils.registerAnnotationConfigProcessors(readerContext.getRegistry(), source);
 			for (BeanDefinitionHolder processorDefinition : processorDefinitions) {
@@ -194,6 +226,12 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 		}
 	}
 
+	/**
+	 * 解析<context:include-filter>和<context:exclude-filter>标签，然后注册TypeFilter到scanner里面
+	 * @param element
+	 * @param scanner
+	 * @param parserContext
+	 */
 	protected void parseTypeFilters(Element element, ClassPathBeanDefinitionScanner scanner, ParserContext parserContext) {
 		// Parse exclude and include filter elements.
 		ClassLoader classLoader = scanner.getResourceLoader().getClassLoader();

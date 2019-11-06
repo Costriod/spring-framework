@@ -66,6 +66,7 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 
 
 	/**
+	 * 这里是具体到某个handler对象，先通过element找到对应的标签名，然后通过标签名找到对应的BeanDefinitionParser对象，最后执行解析操作
 	 * Parses the supplied {@link Element} by delegating to the {@link BeanDefinitionParser} that is
 	 * registered for that {@link Element}.
 	 */
@@ -75,6 +76,7 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 	}
 
 	/**
+	 * 先通过element标签名称找到对应的BeanDefinitionParser
 	 * Locates the {@link BeanDefinitionParser} from the register implementations using
 	 * the local name of the supplied {@link Element}.
 	 */

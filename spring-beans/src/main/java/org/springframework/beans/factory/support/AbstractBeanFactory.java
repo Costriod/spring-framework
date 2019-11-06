@@ -874,8 +874,14 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	}
 
 	/**
-	 * Return the list of BeanPostProcessors that will get applied
-	 * to beans created with this factory.
+	 * 以ClassPathXmlApplicationContext为例，spring默认会注册这么些BeanPostProcessor：
+	 * {@link org.springframework.context.support.ApplicationContextAwareProcessor}
+	 * {@link org.springframework.context.annotation.ConfigurationClassPostProcessor.ImportAwareBeanPostProcessor}
+	 * {@link org.springframework.context.support.PostProcessorRegistrationDelegate.BeanPostProcessorChecker}
+	 * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor}
+	 * {@link org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor}
+	 * {@link org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor}
+	 * {@link org.springframework.context.support.ApplicationListenerDetector}
 	 */
 	public List<BeanPostProcessor> getBeanPostProcessors() {
 		return this.beanPostProcessors;

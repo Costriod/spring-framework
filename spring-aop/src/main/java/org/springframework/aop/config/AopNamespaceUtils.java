@@ -16,6 +16,7 @@
 
 package org.springframework.aop.config;
 
+import org.springframework.aop.framework.autoproxy.InfrastructureAdvisorAutoProxyCreator;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -51,13 +52,19 @@ public abstract class AopNamespaceUtils {
 	 */
 	private static final String EXPOSE_PROXY_ATTRIBUTE = "expose-proxy";
 
-
+	/**
+	 * 注册一个{@link InfrastructureAdvisorAutoProxyCreator}的bean，设置proxyTargetClass为true、exposeProxy为true，前提是配置了这两个属性
+	 * @param parserContext
+	 * @param sourceElement
+	 */
 	public static void registerAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
-
+		//注册一个InfrastructureAdvisorAutoProxyCreator的bean
 		BeanDefinition beanDefinition = AopConfigUtils.registerAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		//设置InfrastructureAdvisorAutoProxyCreator这个bean的proxyTargetClass为true、exposeProxy为true，前提是配置了这两个属性
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+		//如果beanDefinition不为null，则注册beanDefinition
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
@@ -79,6 +86,12 @@ public abstract class AopNamespaceUtils {
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
+	/**
+	 * 设置InfrastructureAdvisorAutoProxyCreator这个bean的proxyTargetClass为true
+	 * 设置InfrastructureAdvisorAutoProxyCreator这个bean的exposeProxy为true
+	 * @param registry
+	 * @param sourceElement
+	 */
 	private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, Element sourceElement) {
 		if (sourceElement != null) {
 			boolean proxyTargetClass = Boolean.parseBoolean(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));

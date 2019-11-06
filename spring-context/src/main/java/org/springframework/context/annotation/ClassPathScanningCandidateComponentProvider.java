@@ -266,6 +266,9 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 
 
 	/**
+	 * 1.先从classpath读取所有的resources（这里是读取所有class文件）
+	 * 2.利用asm字节码技术读取class的元数据（注解信息）
+	 * 3.然后通过TypeFilter进行筛选
 	 * Scan the class path for candidate components.
 	 * @param basePackage the package to check for annotated classes
 	 * @return a corresponding Set of autodetected bean definitions
@@ -273,18 +276,25 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	public Set<BeanDefinition> findCandidateComponents(String basePackage) {
 		Set<BeanDefinition> candidates = new LinkedHashSet<BeanDefinition>();
 		try {
+			//封装一下变成： classpath*:com/xxx/xxx/**.class
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
 					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
+			//利用PathMatchingResourcePatternResolver解析packageSearchPath路径下满足条件的resources，这里找的是class类对象，所以一般会把这个路径下面所有class全找出来（比如实体类、工具类、接口等）
+			//原理就是通过classLoader.getResources(path)找出符合条件的resource目录，然后根据pattern找出对应resource目录下面的资源，最终返回如下格式的resource：
+			//1.如果是自己本地资源，url格式为 [ file:/${projectDirPath}/target/classes/${directory}/${fileName} ]
+			//2.如果是在第三方jar包内，url格式为 [ jar:file:/${jarDirPath}/demo-1.0-SNAPSHOT.jar!/${directory}/${fileName} ]
 			Resource[] resources = this.resourcePatternResolver.getResources(packageSearchPath);
 			boolean traceEnabled = logger.isTraceEnabled();
 			boolean debugEnabled = logger.isDebugEnabled();
-			for (Resource resource : resources) {
+			for (Resource resource : resources) {//遍历上面找到的resource
 				if (traceEnabled) {
 					logger.trace("Scanning " + resource);
 				}
 				if (resource.isReadable()) {
 					try {
+						//从CachingMetadataReaderFactory里面找出MetadataReader，如果没有就创建一个SimpleMetadataReader然后写入缓存
 						MetadataReader metadataReader = this.metadataReaderFactory.getMetadataReader(resource);
+						//这里就是对扫描到的class进行筛选，通过include-filter和exclude-filter实现，内部逻辑比较复杂
 						if (isCandidateComponent(metadataReader)) {
 							ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
 							sbd.setResource(resource);
@@ -327,6 +337,8 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 
 
 	/**
+	 * 1.先替换basePackage里面的占位符${...}，如果占位符没有解析出来，并且也没有默认值则会抛出异常
+	 * 2.将替换占位符之后的basePackage转成目录格式，比如原来是com.xxx.xxx格式的包，现在转成com/xxx/xxx
 	 * Resolve the specified base package into a pattern specification for
 	 * the package search path.
 	 * <p>The default implementation resolves placeholders against system properties,
@@ -339,19 +351,23 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	}
 
 	/**
+	 * 1.默认includeFilters会在构造函数调用registerDefaultFilters()方法（详情参考ClassPathBeanDefinitionScanner的构造方法）
+	 * 2.registerDefaultFilters()方法会默认注册两个AnnotationTypeFilter，分别对应@Component  @ManagedBean注解
+	 * 3.如果includeFilter匹配到了，接下来通过判断是否有@Condition注解，如果有@Condition注解，再判断是否需要忽略这个beanDefinition
 	 * Determine whether the given class does not match any exclude filter
 	 * and does match at least one include filter.
 	 * @param metadataReader the ASM ClassReader for the class
 	 * @return whether the class qualifies as a candidate component
 	 */
 	protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
-		for (TypeFilter tf : this.excludeFilters) {
-			if (tf.match(metadataReader, this.metadataReaderFactory)) {
+		for (TypeFilter tf : this.excludeFilters) {//遍历前面初始化过的excludeFilters
+			if (tf.match(metadataReader, this.metadataReaderFactory)) {//如果匹配到需要排除，那就返回false，表示这个beanDefinition永远不会加入到spring
 				return false;
 			}
 		}
-		for (TypeFilter tf : this.includeFilters) {
-			if (tf.match(metadataReader, this.metadataReaderFactory)) {
+		for (TypeFilter tf : this.includeFilters) {//遍历前面初始化过的includeFilters
+			//TypeFilter一般是AnnotationTypeFilter
+			if (tf.match(metadataReader, this.metadataReaderFactory)) {//如果匹配到了class，接着通过判断是否有@Condition注解，并判断是否需要忽略
 				return isConditionMatch(metadataReader);
 			}
 		}
@@ -359,6 +375,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	}
 
 	/**
+	 * 解析resource对应的class是否有@Condition注解，看看是否需要忽略这个beanDefinition，具体内容没细看
 	 * Determine whether the given class is a candidate component based on any
 	 * {@code @Conditional} annotations.
 	 * @param metadataReader the ASM ClassReader for the class

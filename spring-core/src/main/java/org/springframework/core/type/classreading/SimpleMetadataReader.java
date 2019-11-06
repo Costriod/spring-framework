@@ -38,14 +38,25 @@ import org.springframework.core.type.ClassMetadata;
  * @since 2.5
  */
 final class SimpleMetadataReader implements MetadataReader {
-
+	/**
+	 * class文件资源
+	 */
 	private final Resource resource;
-
+	/**
+	 * class的一些元数据，一般是{@link AnnotationMetadataReadingVisitor}
+	 */
 	private final ClassMetadata classMetadata;
-
+	/**
+	 * class的一些注解元数据，一般是{@link AnnotationMetadataReadingVisitor}
+	 */
 	private final AnnotationMetadata annotationMetadata;
 
-
+	/**
+	 * 创建一个SimpleMetadataReader对象，通过asm字节码技术读取class的字节码，看的一脸懵逼
+	 * @param resource
+	 * @param classLoader
+	 * @throws IOException
+	 */
 	SimpleMetadataReader(Resource resource, ClassLoader classLoader) throws IOException {
 		InputStream is = new BufferedInputStream(resource.getInputStream());
 		ClassReader classReader;

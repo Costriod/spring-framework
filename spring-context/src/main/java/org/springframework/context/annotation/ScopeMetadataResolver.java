@@ -28,6 +28,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 public interface ScopeMetadataResolver {
 
 	/**
+	 * 一般是{@link AnnotationScopeMetadataResolver}
 	 * Resolve the {@link ScopeMetadata} appropriate to the supplied
 	 * bean {@code definition}.
 	 * <p>Implementations can of course use any strategy they like to

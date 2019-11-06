@@ -55,9 +55,16 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 	/** Constant for the "name" attribute */
 	public static final String NAME_ATTRIBUTE = "name";
 
-
+	/**
+	 * parse入口在这里
+	 * @param element the element that is to be parsed into one or more {@link BeanDefinition BeanDefinitions}
+	 * @param parserContext the object encapsulating the current state of the parsing process;
+	 * provides access to a {@link org.springframework.beans.factory.support.BeanDefinitionRegistry}
+	 * @return
+	 */
 	@Override
 	public final BeanDefinition parse(Element element, ParserContext parserContext) {
+		//这里解析自定义标签
 		AbstractBeanDefinition definition = parseInternal(element, parserContext);
 		if (definition != null && !parserContext.isNested()) {
 			try {
@@ -138,6 +145,7 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 
 
 	/**
+	 * 详情参考{@link AbstractSingleBeanDefinitionParser#parseInternal(org.w3c.dom.Element, org.springframework.beans.factory.xml.ParserContext)}
 	 * Central template method to actually parse the supplied {@link Element}
 	 * into one or more {@link BeanDefinition BeanDefinitions}.
 	 * @param element the element that is to be parsed into one or more {@link BeanDefinition BeanDefinitions}

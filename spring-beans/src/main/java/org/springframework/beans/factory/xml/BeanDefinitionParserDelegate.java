@@ -410,6 +410,9 @@ public class BeanDefinitionParserDelegate {
 	}
 
 	/**
+	 * default-autowire-candidates就是告诉spring指定某个范围的bean作为候选注入的bean
+	 * 如果beans标签包含default-autowire-candidates属性，如<beans ... default-autowire-candidates="*Bean"></beans>，
+	 * 那么只要是名字匹配 *Bean 的bean都会作为候选注入的bean，而其他bean就会排除在外
 	 * Return any patterns provided in the 'default-autowire-candidates'
 	 * attribute of the top-level {@code <beans/>} element.
 	 */
@@ -1425,6 +1428,7 @@ public class BeanDefinitionParserDelegate {
 	 */
 	public BeanDefinition parseCustomElement(Element ele, BeanDefinition containingBd) {
 		String namespaceUri = getNamespaceURI(ele);
+		//先通过namespace找到对应的handler对象
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);

@@ -204,7 +204,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				if (singletonObject == null && allowEarlyReference) {
 					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 					if (singletonFactory != null) {//通过ObjectFactory获取bean
-						singletonObject = singletonFactory.getObject();
+						singletonObject = singletonFactory.getObject();//实际ObjectFactory在AbstractAutowireCapableBeanFactory的doCreateBean方法里面，可以搜索addSingletonFactory
 						this.earlySingletonObjects.put(beanName, singletonObject);//earlySingletonObjects一般存的是那种刚创建还没初始化的bean
 						this.singletonFactories.remove(beanName);//单例bean生成之后，ObjectFactory就没必要存在了
 					}

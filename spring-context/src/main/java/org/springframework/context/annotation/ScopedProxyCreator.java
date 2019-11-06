@@ -36,6 +36,11 @@ class ScopedProxyCreator {
 		return ScopedProxyUtils.createScopedProxy(definitionHolder, registry, proxyTargetClass);
 	}
 
+	/**
+	 * 返回 "scopedTarget." + originalBeanName
+	 * @param originalBeanName
+	 * @return
+	 */
 	public static String getTargetBeanName(String originalBeanName) {
 		return ScopedProxyUtils.getTargetBeanName(originalBeanName);
 	}
