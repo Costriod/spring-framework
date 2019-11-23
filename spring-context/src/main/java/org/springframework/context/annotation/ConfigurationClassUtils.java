@@ -45,9 +45,13 @@ import org.springframework.stereotype.Component;
  * @since 3.1
  */
 abstract class ConfigurationClassUtils {
-
+	/**
+	 * 如果beanDefinition的class上面被@Configuration标注
+	 */
 	private static final String CONFIGURATION_CLASS_FULL = "full";
-
+	/**
+	 * 如果beanDefinition的class被@Component @ComponentScan @Import @ImportResource注解标注，或者内部有@Bean标注的方法
+	 */
 	private static final String CONFIGURATION_CLASS_LITE = "lite";
 
 	private static final String CONFIGURATION_CLASS_ATTRIBUTE =
@@ -70,6 +74,7 @@ abstract class ConfigurationClassUtils {
 
 
 	/**
+	 * 1.其实这个类就是判断BeanDefinition的class里面是否有@Configuration @Component @ComponentScan @Import @ImportResource @Bean这些注解，有的话返回true
 	 * Check whether the given bean definition is a candidate for a configuration class
 	 * (or a nested component class declared within a configuration/component class,
 	 * to be auto-registered as well), and mark it accordingly.
@@ -108,9 +113,11 @@ abstract class ConfigurationClassUtils {
 			}
 		}
 
+		//如果bean的class上面被@Configuration标注
 		if (isFullConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		//bean的class被@Component @ComponentScan @Import @ImportResource注解标注，或者内部有@Bean标注的方法
 		else if (isLiteConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
@@ -119,8 +126,9 @@ abstract class ConfigurationClassUtils {
 		}
 
 		// It's a full or lite configuration candidate... Let's determine the order value, if any.
+		// 读取class上面的@Order注解（也可能没有）
 		Map<String, Object> orderAttributes = metadata.getAnnotationAttributes(Order.class.getName());
-		if (orderAttributes != null) {
+		if (orderAttributes != null) {//如果有@Order注解，则读取@Order里面的value属性
 			beanDef.setAttribute(ORDER_ATTRIBUTE, orderAttributes.get(AnnotationUtils.VALUE));
 		}
 
@@ -150,6 +158,10 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * 1.如果class是接口，则返回false
+	 * 2.如果class被@Component @ComponentScan @Import @ImportResource注解标注则返回true
+	 * 3.如果class里面有@Bean注解方法，则返回true
+	 * 4.否则返回false
 	 * Check the given metadata for a lite configuration class candidate
 	 * (e.g. a class annotated with {@code @Component} or just having
 	 * {@code @Import} declarations or {@code @Bean methods}).
@@ -183,6 +195,7 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * 如果beanDefinition的class上面被@Configuration标注
 	 * Determine whether the given bean definition indicates a full {@code @Configuration}
 	 * class, through checking {@link #checkConfigurationClassCandidate}'s metadata marker.
 	 */
@@ -191,6 +204,7 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * 如果beanDefinition的class被@Component @ComponentScan @Import @ImportResource注解标注，或者内部有@Bean标注的方法
 	 * Determine whether the given bean definition indicates a lite {@code @Configuration}
 	 * class, through checking {@link #checkConfigurationClassCandidate}'s metadata marker.
 	 */

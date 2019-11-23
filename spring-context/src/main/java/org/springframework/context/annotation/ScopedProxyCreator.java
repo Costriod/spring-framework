@@ -30,6 +30,13 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
  */
 class ScopedProxyCreator {
 
+	/**
+	 * 创建一个新的proxyDefinition返回，新的proxyDefinition引用了原始definition
+	 * @param definitionHolder
+	 * @param registry
+	 * @param proxyTargetClass
+	 * @return
+	 */
 	public static BeanDefinitionHolder createScopedProxy(
 			BeanDefinitionHolder definitionHolder, BeanDefinitionRegistry registry, boolean proxyTargetClass) {
 

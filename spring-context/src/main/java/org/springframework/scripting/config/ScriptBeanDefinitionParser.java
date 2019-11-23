@@ -90,6 +90,7 @@ class ScriptBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
 
 	/**
+	 * scriptFactoryClassName参考{@link LangNamespaceHandler}的init方法
 	 * Create a new instance of this parser, creating bean definitions for the
 	 * supplied {@link org.springframework.scripting.ScriptFactory} class.
 	 * @param scriptFactoryClassName the ScriptFactory class to operate on
@@ -100,6 +101,7 @@ class ScriptBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
 
 	/**
+	 * 先从父类{@link AbstractBeanDefinitionParser#parse(org.w3c.dom.Element, org.springframework.beans.factory.xml.ParserContext)} 开始解析，然后执行到这里解析<lang:groovy >标签（也可能是<lang:jruby >）
 	 * Parses the dynamic object element and returns the resulting bean definition.
 	 * Registers a {@link ScriptFactoryPostProcessor} if needed.
 	 */
@@ -109,7 +111,7 @@ class ScriptBeanDefinitionParser extends AbstractBeanDefinitionParser {
 		// Engine attribute only supported for <lang:std>
 		String engine = element.getAttribute(ENGINE_ATTRIBUTE);
 
-		// Resolve the script source.
+		// 解析script-source路径，或者inline-script内部的groovy代码
 		String value = resolveScriptSource(element, parserContext.getReaderContext());
 		if (value == null) {
 			return null;
@@ -215,6 +217,8 @@ class ScriptBeanDefinitionParser extends AbstractBeanDefinitionParser {
 	}
 
 	/**
+	 * 解析script-source或inline-script两个属性，两者不能同时存在，inline-script就是将groovy代码直接写到这里面去；script-source就是指定一个groovy文件路径
+	 * 最终返回script-source路径，或者返回inline-script内部的groovy代码
 	 * Resolves the script source from either the '{@code script-source}' attribute or
 	 * the '{@code inline-script}' element. Logs and {@link XmlReaderContext#error} and
 	 * returns {@code null} if neither or both of these values are specified.

@@ -38,6 +38,7 @@ public abstract class ScopedProxyUtils {
 
 
 	/**
+	 * 其实就是对创建一个新的proxyDefinition，然后这个proxyDefinition引用targetDefinition，最后将targetDefinition注册到registry里面去，返回这个proxyDefinition
 	 * Generate a scoped proxy for the supplied target bean, registering the target
 	 * bean with an internal name and setting 'targetBeanName' on the scoped proxy.
 	 * @param definition the original bean definition

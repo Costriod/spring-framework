@@ -31,6 +31,7 @@ import org.springframework.core.type.AnnotationMetadata;
 public interface ImportAware extends Aware {
 
 	/**
+	 * 假设A.class上面有个@Import注解引入了B.class，假设此刻B.class实现了ImportAware接口，那么这个方法传入的importMetadata就是A.class的信息
 	 * Set the annotation metadata of the importing @{@code Configuration} class.
 	 */
 	void setImportMetadata(AnnotationMetadata importMetadata);

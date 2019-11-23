@@ -576,7 +576,7 @@ class ConstructorResolver {
 		try {
 			Object beanInstance;
 
-			if (System.getSecurityManager() != null) {
+			if (System.getSecurityManager() != null) {//通过工厂方法创建bean，详情参考SimpleInstantiationStrategy的instantiate方法
 				final Object fb = factoryBean;
 				final Method factoryMethod = factoryMethodToUse;
 				final Object[] args = argsToUse;
@@ -588,7 +588,7 @@ class ConstructorResolver {
 					}
 				}, beanFactory.getAccessControlContext());
 			}
-			else {
+			else {//通过工厂方法创建bean，详情参考SimpleInstantiationStrategy的instantiate方法
 				beanInstance = this.beanFactory.getInstantiationStrategy().instantiate(
 						mbd, beanName, this.beanFactory, factoryBean, factoryMethodToUse, argsToUse);
 			}

@@ -66,7 +66,7 @@ import org.springframework.core.Ordered;
 public @interface Order {
 
 	/**
-	 * bean初始化的顺序，值越大初始化越晚
+	 * bean初始化的顺序，值越大初始化优先级越低，值越小初始化优先级越高
 	 * <p>Default is {@link Ordered#LOWEST_PRECEDENCE}.
 	 * @see Ordered#getOrder()
 	 */

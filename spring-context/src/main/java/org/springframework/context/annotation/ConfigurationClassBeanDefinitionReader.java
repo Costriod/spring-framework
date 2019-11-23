@@ -112,7 +112,7 @@ class ConfigurationClassBeanDefinitionReader {
 	 */
 	public void loadBeanDefinitions(Set<ConfigurationClass> configurationModel) {
 		TrackedConditionEvaluator trackedConditionEvaluator = new TrackedConditionEvaluator();
-		for (ConfigurationClass configClass : configurationModel) {
+		for (ConfigurationClass configClass : configurationModel) {//遍历每一个ConfigurationClass
 			loadBeanDefinitionsForConfigurationClass(configClass, trackedConditionEvaluator);
 		}
 	}
@@ -124,7 +124,7 @@ class ConfigurationClassBeanDefinitionReader {
 	private void loadBeanDefinitionsForConfigurationClass(
 			ConfigurationClass configClass, TrackedConditionEvaluator trackedConditionEvaluator) {
 
-		if (trackedConditionEvaluator.shouldSkip(configClass)) {
+		if (trackedConditionEvaluator.shouldSkip(configClass)) {//如果需要skip，那么这个beanDefinition不会注册到spring，如果已存在则剔除
 			String beanName = configClass.getBeanName();
 			if (StringUtils.hasLength(beanName) && this.registry.containsBeanDefinition(beanName)) {
 				this.registry.removeBeanDefinition(beanName);
@@ -133,14 +133,15 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
-		if (configClass.isImported()) {
+		if (configClass.isImported()) {//configClass是否是被其他class引入，比如某个类上面@Import引入了class，封装成beanDefinition注册到registry
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
-		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
+		for (BeanMethod beanMethod : configClass.getBeanMethods()) {//解析@Bean标注的方法，封装成beanDefinition注册到registry
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
-
+		//处理@ImportResource引入的resource（可能是xml或者groovy）
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+		//处理ImportBeanDefinitionRegistrar，手工注册beanDefinition
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 
@@ -154,9 +155,11 @@ class ConfigurationClassBeanDefinitionReader {
 		ScopeMetadata scopeMetadata = scopeMetadataResolver.resolveScopeMetadata(configBeanDef);
 		configBeanDef.setScope(scopeMetadata.getScopeName());
 		String configBeanName = this.importBeanNameGenerator.generateBeanName(configBeanDef, this.registry);
+		//初始化BeanDefinition一些常规属性
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(configBeanDef, metadata);
 
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(configBeanDef, configBeanName);
+		//如果有必要则对这个definitionHolder进行一次封装，前提是配置了scopedProxyMode
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 		this.registry.registerBeanDefinition(definitionHolder.getBeanName(), definitionHolder.getBeanDefinition());
 		configClass.setBeanName(configBeanName);
@@ -173,9 +176,11 @@ class ConfigurationClassBeanDefinitionReader {
 	private void loadBeanDefinitionsForBeanMethod(BeanMethod beanMethod) {
 		ConfigurationClass configClass = beanMethod.getConfigurationClass();
 		MethodMetadata metadata = beanMethod.getMetadata();
+		//读取@Bean标注的方法名
 		String methodName = metadata.getMethodName();
 
 		// Do we need to mark the bean as skipped by its condition?
+		// 看看这个@Bean注解标注的方法里面找出@Conditional，然后通过里面的Condition类对象判断是否需要skip
 		if (this.conditionEvaluator.shouldSkip(metadata, ConfigurationPhase.REGISTER_BEAN)) {
 			configClass.skippedBeanMethods.add(methodName);
 			return;
@@ -186,11 +191,13 @@ class ConfigurationClassBeanDefinitionReader {
 
 		// Consider name and any aliases
 		AnnotationAttributes bean = AnnotationConfigUtils.attributesFor(metadata, Bean.class);
+		//读取@Bean设置的多个name
 		List<String> names = new ArrayList<String>(Arrays.asList(bean.getStringArray("name")));
+		//如果设置了多个name，则取第一个name作为bean的name，否则以methodName作为bean的name
 		String beanName = (!names.isEmpty() ? names.remove(0) : methodName);
 
 		// Register aliases even when overridden
-		for (String alias : names) {
+		for (String alias : names) {//@Bean的其他name就作为别名注册进去
 			this.registry.registerAlias(beanName, alias);
 		}
 
@@ -310,6 +317,10 @@ class ConfigurationClassBeanDefinitionReader {
 		return true;
 	}
 
+	/**
+	 * 处理@ImportResource载入的xml文件或者groovy文件，如果是xml则用XmlBeanDefinitionReader载入beanDefinition，如果是groovy则用GroovyBeanDefinitionReader载入
+	 * @param importedResources
+	 */
 	private void loadBeanDefinitionsFromImportedResources(
 			Map<String, Class<? extends BeanDefinitionReader>> importedResources) {
 
@@ -355,6 +366,10 @@ class ConfigurationClassBeanDefinitionReader {
 		}
 	}
 
+	/**
+	 * 处理ImportBeanDefinitionRegistrar，通过这种形式手工注册beanDefinition
+	 * @param registrars
+	 */
 	private void loadBeanDefinitionsFromRegistrars(Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> registrars) {
 		for (Map.Entry<ImportBeanDefinitionRegistrar, AnnotationMetadata> entry : registrars.entrySet()) {
 			entry.getKey().registerBeanDefinitions(entry.getValue(), this.registry);

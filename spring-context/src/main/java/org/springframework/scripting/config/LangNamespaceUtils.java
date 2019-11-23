@@ -37,6 +37,7 @@ public abstract class LangNamespaceUtils {
 
 
 	/**
+	 * 注册一个ScriptFactoryPostProcessor的beanDefinition。这个ScriptFactoryPostProcessor是用来解析<lang:defaults >标签的
 	 * Register a {@link ScriptFactoryPostProcessor} bean definition in the supplied
 	 * {@link BeanDefinitionRegistry} if the {@link ScriptFactoryPostProcessor} hasn't
 	 * already been registered.

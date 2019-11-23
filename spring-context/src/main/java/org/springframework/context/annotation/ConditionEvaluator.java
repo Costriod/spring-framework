@@ -65,6 +65,9 @@ class ConditionEvaluator {
 	}
 
 	/**
+	 * 根据类上面的@Conditional注解判断是否需要skip这个class，如果class需要skip，则代表这个class不会注册到spring里面
+	 * 1.如果metadata为null，或者class没有被@Conditional标注则直接返回false
+	 * 2.遍历class上面的所有@Conditional注解，找出里面的Condition类，然后通过反射创建这些Condition类对象，只要condition不匹配就代表class需要skip
 	 * Determine if an item should be skipped based on {@code @Conditional} annotations.
 	 * @param metadata the meta data
 	 * @param phase the phase of the call
@@ -84,8 +87,9 @@ class ConditionEvaluator {
 		}
 
 		List<Condition> conditions = new ArrayList<Condition>();
-		for (String[] conditionClasses : getConditionClasses(metadata)) {
+		for (String[] conditionClasses : getConditionClasses(metadata)) {//读取@Conditional注解里面的value()属性，返回这些Condition类的实际class名称，可能一个class上面有多个@Conditional注解，这里会根据不同@Conditional注解进行分组
 			for (String conditionClass : conditionClasses) {
+				//通过反射创建对象
 				Condition condition = getCondition(conditionClass, this.context.getClassLoader());
 				conditions.add(condition);
 			}
@@ -99,7 +103,7 @@ class ConditionEvaluator {
 				requiredPhase = ((ConfigurationCondition) condition).getConfigurationPhase();
 			}
 			if (requiredPhase == null || requiredPhase == phase) {
-				if (!condition.matches(this.context, metadata)) {
+				if (!condition.matches(this.context, metadata)) {//如果condition不匹配，则返回true，代表当前这个class需要skip，这样这个class就不会注册到spring里面去
 					return true;
 				}
 			}
@@ -108,6 +112,12 @@ class ConditionEvaluator {
 		return false;
 	}
 
+	/**
+	 * 获取一个class上面标注的@Conditional注解value()信息，会根据不同@Conditional注解进行分组（不同的@Conditional意思就是某些注解内部本身也被@Conditional标注了，这种也可以当做一个@Conditional注解，比如@Profile内部也有一个@Conditional）
+	 * 比如spring boot的@ConditionOnBean  @ConditionOnClass，这两个注解内部也有一个@Conditional注解，这两个也可以当成@Conditional，spring解析到这里的时候也会根据@Conditional @ConditionOnBean @ConditionOnClass分别进行分组，返回里面的Condition类名称数组
+	 * @param metadata
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	private List<String[]> getConditionClasses(AnnotatedTypeMetadata metadata) {
 		MultiValueMap<String, Object> attributes = metadata.getAllAnnotationAttributes(Conditional.class.getName(), true);
