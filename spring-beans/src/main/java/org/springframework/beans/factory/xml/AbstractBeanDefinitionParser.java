@@ -146,7 +146,7 @@ public abstract class AbstractBeanDefinitionParser implements BeanDefinitionPars
 
 
 	/**
-	 * 这是一个抽象方法，具体方法有子类实现
+	 * 这是一个抽象方法，具体方法有子类实现，一般默认是{@link AbstractSingleBeanDefinitionParser}
 	 * Central template method to actually parse the supplied {@link Element}
 	 * into one or more {@link BeanDefinition BeanDefinitions}.
 	 * @param element the element that is to be parsed into one or more {@link BeanDefinition BeanDefinitions}

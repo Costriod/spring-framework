@@ -46,6 +46,7 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 public abstract class AbstractSingleBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
 	/**
+	 * 解析xml标签的一些基础属性
 	 * Creates a {@link BeanDefinitionBuilder} instance for the
 	 * {@link #getBeanClass bean Class} and passes it to the
 	 * {@link #doParse} strategy method.
@@ -59,16 +60,16 @@ public abstract class AbstractSingleBeanDefinitionParser extends AbstractBeanDef
 	@Override
 	protected final AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
 		BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition();
-		String parentName = getParentName(element);
+		String parentName = getParentName(element);//获取xml标签的上一层标签名称
 		if (parentName != null) {
 			builder.getRawBeanDefinition().setParentName(parentName);
 		}
-		Class<?> beanClass = getBeanClass(element);
+		Class<?> beanClass = getBeanClass(element);//获取xml标签的class属性，一般子类也有可能重写这个方法
 		if (beanClass != null) {
 			builder.getRawBeanDefinition().setBeanClass(beanClass);
 		}
 		else {
-			String beanClassName = getBeanClassName(element);
+			String beanClassName = getBeanClassName(element);//获取xml标签的class属性，一般子类也有可能重写这个方法
 			if (beanClassName != null) {
 				builder.getRawBeanDefinition().setBeanClassName(beanClassName);
 			}
@@ -76,13 +77,14 @@ public abstract class AbstractSingleBeanDefinitionParser extends AbstractBeanDef
 		builder.getRawBeanDefinition().setSource(parserContext.extractSource(element));
 		if (parserContext.isNested()) {
 			// Inner bean definition must receive same scope as containing bean.
+			// 如果<bean> 标签内部又内嵌了一个 <bean>标签，这种就是内嵌bean，所以内嵌的bean需要继承外部的bean的scope属性
 			builder.setScope(parserContext.getContainingBeanDefinition().getScope());
 		}
 		if (parserContext.isDefaultLazyInit()) {
 			// Default-lazy-init applies to custom bean definitions as well.
 			builder.setLazyInit(true);
 		}
-		doParse(element, parserContext, builder);
+		doParse(element, parserContext, builder);//解析其他属性，子类实现
 		return builder.getBeanDefinition();
 	}
 
@@ -100,6 +102,7 @@ public abstract class AbstractSingleBeanDefinitionParser extends AbstractBeanDef
 	}
 
 	/**
+	 * 解析xml的class信息，最终注册beanDefinition的时候的class就是这里返回的class
 	 * Determine the bean class corresponding to the supplied {@link Element}.
 	 * <p>Note that, for application classes, it is generally preferable to
 	 * override {@link #getBeanClassName} instead, in order to avoid a direct
@@ -127,6 +130,7 @@ public abstract class AbstractSingleBeanDefinitionParser extends AbstractBeanDef
 	}
 
 	/**
+	 * 解析xml标签的一些其他属性，有子类实现
 	 * Parse the supplied {@link Element} and populate the supplied
 	 * {@link BeanDefinitionBuilder} as required.
 	 * <p>The default implementation delegates to the {@code doParse}
@@ -141,6 +145,7 @@ public abstract class AbstractSingleBeanDefinitionParser extends AbstractBeanDef
 	}
 
 	/**
+	 * 解析xml标签的一些其他属性，有子类实现
 	 * Parse the supplied {@link Element} and populate the supplied
 	 * {@link BeanDefinitionBuilder} as required.
 	 * <p>The default implementation does nothing.

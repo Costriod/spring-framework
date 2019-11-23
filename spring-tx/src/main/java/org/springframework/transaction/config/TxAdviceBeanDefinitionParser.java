@@ -65,51 +65,71 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
 	private static final String NO_ROLLBACK_FOR_ATTRIBUTE = "no-rollback-for";
 
-
+	/**
+	 * 父类执行parseInternal的时候，会执行这个getBeanClass方法，也就是最终会生成一个beanDefinition，class就是本方法返回的
+	 * @param element the {@code Element} that is being parsed
+	 * @return
+	 */
 	@Override
 	protected Class<?> getBeanClass(Element element) {
 		return TransactionInterceptor.class;
 	}
 
+	/**
+	 * 父类执行parseInternal的最后一段代码会执行doParse方法，最终会转入这里来
+	 * @param element the XML element being parsed
+	 * @param parserContext the object encapsulating the current state of the parsing process
+	 * @param builder used to define the {@code BeanDefinition}
+	 */
 	@Override
 	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
+		//这里就是解析xml的transaction-manager属性，如果没设置这个属性，则使用默认值transactionManager
 		builder.addPropertyReference("transactionManager", TxNamespaceHandler.getTransactionManagerName(element));
-
+		//读取<tx:advice>标签内嵌的<tx:attributes>标签，最多允许一个内嵌的<tx:attributes>标签
 		List<Element> txAttributes = DomUtils.getChildElementsByTagName(element, ATTRIBUTES_ELEMENT);
 		if (txAttributes.size() > 1) {
 			parserContext.getReaderContext().error(
 					"Element <attributes> is allowed at most once inside element <advice>", element);
 		}
-		else if (txAttributes.size() == 1) {
+		else if (txAttributes.size() == 1) {//如果解析了一个<tx:attributes>标签
 			// Using attributes source.
 			Element attributeSourceElement = txAttributes.get(0);
+			//解析<tx:attributes>标签内部的参数，生成一个NameMatchTransactionAttributeSource的BeanDefinition
 			RootBeanDefinition attributeSourceDefinition = parseAttributeSource(attributeSourceElement, parserContext);
 			builder.addPropertyValue("transactionAttributeSource", attributeSourceDefinition);
 		}
-		else {
+		else {//如果没有配置<tx:attributes>标签，则使用默认的AnnotationTransactionAttributeSource
 			// Assume annotations source.
 			builder.addPropertyValue("transactionAttributeSource",
 					new RootBeanDefinition("org.springframework.transaction.annotation.AnnotationTransactionAttributeSource"));
 		}
 	}
 
+	/**
+	 * 解析<tx:attributes>标签内部的参数信息，生成一个NameMatchTransactionAttributeSource的BeanDefinition
+	 * @param attrEle
+	 * @param parserContext
+	 * @return
+	 */
 	private RootBeanDefinition parseAttributeSource(Element attrEle, ParserContext parserContext) {
+		//获取里面所有的<tx:method>标签
 		List<Element> methods = DomUtils.getChildElementsByTagName(attrEle, METHOD_ELEMENT);
+		//存储<tx:method>标签的属性信息，key是<tx:method>标签的name，value是<tx:method>标签的其他属性值
 		ManagedMap<TypedStringValue, RuleBasedTransactionAttribute> transactionAttributeMap =
 			new ManagedMap<TypedStringValue, RuleBasedTransactionAttribute>(methods.size());
 		transactionAttributeMap.setSource(parserContext.extractSource(attrEle));
 
 		for (Element methodEle : methods) {
-			String name = methodEle.getAttribute(METHOD_NAME_ATTRIBUTE);
+			String name = methodEle.getAttribute(METHOD_NAME_ATTRIBUTE);//解析<tx:method>标签的name属性
 			TypedStringValue nameHolder = new TypedStringValue(name);
 			nameHolder.setSource(parserContext.extractSource(methodEle));
 
 			RuleBasedTransactionAttribute attribute = new RuleBasedTransactionAttribute();
-			String propagation = methodEle.getAttribute(PROPAGATION_ATTRIBUTE);
-			String isolation = methodEle.getAttribute(ISOLATION_ATTRIBUTE);
-			String timeout = methodEle.getAttribute(TIMEOUT_ATTRIBUTE);
-			String readOnly = methodEle.getAttribute(READ_ONLY_ATTRIBUTE);
-			if (StringUtils.hasText(propagation)) {
+			String propagation = methodEle.getAttribute(PROPAGATION_ATTRIBUTE);//解析<tx:method>标签的propagation属性，这个对应事务传播级别
+			String isolation = methodEle.getAttribute(ISOLATION_ATTRIBUTE);//解析<tx:method>标签的isolation属性，这个对应事务隔离级别
+			String timeout = methodEle.getAttribute(TIMEOUT_ATTRIBUTE);//解析<tx:method>标签的timeout属性，这个对应事务超时时间
+			String readOnly = methodEle.getAttribute(READ_ONLY_ATTRIBUTE);//解析<tx:method>标签的read-only属性
+			if (StringUtils.hasText(propagation)) {//如果有propagation属性，设置propagation的值
 				attribute.setPropagationBehaviorName(RuleBasedTransactionAttribute.PREFIX_PROPAGATION + propagation);
 			}
 			if (StringUtils.hasText(isolation)) {
@@ -128,10 +148,12 @@ class TxAdviceBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 			}
 
 			List<RollbackRuleAttribute> rollbackRules = new LinkedList<RollbackRuleAttribute>();
+			//解析<tx:method>标签的rollback-for属性，属性值是Exception，多个Exception用“,”隔开，表示事务执行期间捕获到这些异常则回滚事务
 			if (methodEle.hasAttribute(ROLLBACK_FOR_ATTRIBUTE)) {
 				String rollbackForValue = methodEle.getAttribute(ROLLBACK_FOR_ATTRIBUTE);
 				addRollbackRuleAttributesTo(rollbackRules,rollbackForValue);
 			}
+			//解析<tx:method>标签的no-rollback-for属性，属性值是Exception，多个Exception用“,”隔开，表示事务执行期间捕获到这些异常则不用回滚事务
 			if (methodEle.hasAttribute(NO_ROLLBACK_FOR_ATTRIBUTE)) {
 				String noRollbackForValue = methodEle.getAttribute(NO_ROLLBACK_FOR_ATTRIBUTE);
 				addNoRollbackRuleAttributesTo(rollbackRules,noRollbackForValue);
