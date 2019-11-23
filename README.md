@@ -1,4 +1,5 @@
 ## Spring Framework
+导入代码前需要执行./gradlew cglibRepackJar和./gradlew objenesisRepackJar
 从最简单的context.start()开始
 ```java
 ClassPathXmlApplicationContext context = new
