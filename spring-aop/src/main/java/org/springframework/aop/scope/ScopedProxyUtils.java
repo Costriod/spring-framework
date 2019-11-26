@@ -90,6 +90,7 @@ public abstract class ScopedProxyUtils {
 	}
 
 	/**
+	 * 返回"scopedTarget." + beanName
 	 * Generate the bean name that is used within the scoped proxy to reference the target bean.
 	 * @param originalBeanName the original name of bean
 	 * @return the generated bean to be used to reference the target bean
@@ -99,6 +100,7 @@ public abstract class ScopedProxyUtils {
 	}
 
 	/**
+	 * 如果beanName以"scopedTarget."开头则返回true
 	 * Specify if the {@code beanName} is the name of a bean that references the target
 	 * bean within a scoped proxy.
 	 * @since 4.1.4

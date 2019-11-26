@@ -62,7 +62,7 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
 		//默认先注册一个TransactionalEventListenerFactory的beanDefinition
 		registerTransactionalEventListenerFactory(parserContext);
-		String mode = element.getAttribute("mode");
+		String mode = element.getAttribute("mode");//默认mode是proxy
 		if ("aspectj".equals(mode)) {
 			// mode="aspectj"
 			registerTransactionAspect(element, parserContext);
@@ -139,7 +139,7 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 				interceptorDef.getPropertyValues().add("transactionAttributeSource", new RuntimeBeanReference(sourceName));
 				String interceptorName = parserContext.getReaderContext().registerWithGeneratedName(interceptorDef);
 
-				//创建TransactionAttributeSourceAdvisor的beanDefinition
+				//创建BeanFactoryTransactionAttributeSourceAdvisor的beanDefinition
 				RootBeanDefinition advisorDef = new RootBeanDefinition(BeanFactoryTransactionAttributeSourceAdvisor.class);
 				advisorDef.setSource(eleSource);
 				advisorDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);

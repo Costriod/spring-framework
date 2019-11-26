@@ -49,6 +49,14 @@ public class DefaultEventListenerFactory implements EventListenerFactory, Ordere
 		return true;
 	}
 
+	/**
+	 * 返回一个ApplicationListenerMethodAdapter对象，@EventListener标注的方法执行完的返回结果又作为一个event广播出去，所以这里就有一个问题，
+	 * 如果@EventListener标注的方法参数类型和返回类型一致，可能会出现无限循环，这点需要注意
+	 * @param beanName bean名称
+	 * @param type bean的类型
+	 * @param method 被 {@link EventListener} 注解标注的方法
+	 * @return
+	 */
 	@Override
 	public ApplicationListener<?> createApplicationListener(String beanName, Class<?> type, Method method) {
 		return new ApplicationListenerMethodAdapter(beanName, type, method);

@@ -71,12 +71,15 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 
 	@Override
 	public void afterSingletonsInstantiated() {
+		//获取所有EventListenerFactory，一般是DefaultEventListenerFactory
 		List<EventListenerFactory> factories = getEventListenerFactories();
+		//Object是所有class的父类，这里是获取spring容器里面所有的beanName
 		String[] beanNames = this.applicationContext.getBeanNamesForType(Object.class);
 		for (String beanName : beanNames) {
-			if (!ScopedProxyUtils.isScopedTarget(beanName)) {
+			if (!ScopedProxyUtils.isScopedTarget(beanName)) {//如果beanName不是以"scopedTarget."开头，以这个开头的都是那些配置了scope的bean
 				Class<?> type = null;
 				try {
+					//获取bean实际的class
 					type = AutoProxyUtils.determineTargetClass(this.applicationContext.getBeanFactory(), beanName);
 				}
 				catch (Throwable ex) {
@@ -86,7 +89,7 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 					}
 				}
 				if (type != null) {
-					if (ScopedObject.class.isAssignableFrom(type)) {
+					if (ScopedObject.class.isAssignableFrom(type)) {//如果type类实现了ScopedObject接口
 						try {
 							type = AutoProxyUtils.determineTargetClass(this.applicationContext.getBeanFactory(),
 									ScopedProxyUtils.getTargetBeanName(beanName));
@@ -112,6 +115,7 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 
 
 	/**
+	 * 获取所有EventListenerFactory接口的实现类，一般默认是DefaultEventListenerFactory，在AnnotationConfigUtils的registerAnnotationConfigProcessors方法里注册到spring的
 	 * Return the {@link EventListenerFactory} instances to use to handle
 	 * {@link EventListener} annotated methods.
 	 */
@@ -126,6 +130,7 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 		if (!this.nonAnnotatedClasses.contains(targetType)) {
 			Map<Method, EventListener> annotatedMethods = null;
 			try {
+				//读取这个class内所有被@EventListener注解标注的方法，包括静态方法
 				annotatedMethods = MethodIntrospector.selectMethods(targetType,
 						new MethodIntrospector.MetadataLookup<EventListener>() {
 							@Override
@@ -140,7 +145,7 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 					logger.debug("Could not resolve methods for bean with name '" + beanName + "'", ex);
 				}
 			}
-			if (CollectionUtils.isEmpty(annotatedMethods)) {
+			if (CollectionUtils.isEmpty(annotatedMethods)) {//如果这个类没有@EventListener注解标注的方法
 				this.nonAnnotatedClasses.add(targetType);
 				if (logger.isTraceEnabled()) {
 					logger.trace("No @EventListener annotations found on bean class: " + targetType.getName());
@@ -151,14 +156,17 @@ public class EventListenerMethodProcessor implements SmartInitializingSingleton,
 				for (Method method : annotatedMethods.keySet()) {
 					for (EventListenerFactory factory : factories) {
 						if (factory.supportsMethod(method)) {
+							//获取可执行的method
 							Method methodToUse = AopUtils.selectInvocableMethod(
 									method, this.applicationContext.getType(beanName));
+							//创建一个ApplicationListener，默认是通过DefaultEventListenerFactory创建一个ApplicationListenerMethodAdapter对象
 							ApplicationListener<?> applicationListener =
 									factory.createApplicationListener(beanName, targetType, methodToUse);
-							if (applicationListener instanceof ApplicationListenerMethodAdapter) {
+							if (applicationListener instanceof ApplicationListenerMethodAdapter) {//默认是ApplicationListenerMethodAdapter，所以会进入这里面执行init方法
 								((ApplicationListenerMethodAdapter) applicationListener)
 										.init(this.applicationContext, this.evaluator);
 							}
+							//注册到spring
 							this.applicationContext.addApplicationListener(applicationListener);
 							break;
 						}

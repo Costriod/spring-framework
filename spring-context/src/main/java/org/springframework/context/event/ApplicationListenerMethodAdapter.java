@@ -174,8 +174,10 @@ public class ApplicationListenerMethodAdapter implements GenericApplicationListe
 	public void processEvent(ApplicationEvent event) {
 		Object[] args = resolveArguments(event);
 		if (shouldHandle(event, args)) {
+			//真正执行@EventListener标注的方法
 			Object result = doInvoke(args);
 			if (result != null) {
+				//方法执行完的返回结果又作为一个event广播出去，所以这里就有一个问题，如果@EventListener标注的方法参数类型和返回类型一致，可能会出现无限循环，这点需要注意
 				handleResult(result);
 			}
 			else {

@@ -198,13 +198,14 @@ public class AnnotationConfigUtils {
 			beanDefs.add(registerPostProcessor(registry, def, PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
-		//EventListenerMethodProcessor用来处理@EventListener注解的
+		//EventListenerMethodProcessor用来处理@EventListener注解的方法，扫描到之后生成一个ApplicationListenerMethodAdapter注册到spring里面
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(EventListenerMethodProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, EVENT_LISTENER_PROCESSOR_BEAN_NAME));
 		}
 
+		//DefaultEventListenerFactory是一个工厂，对@EventListener注解方法生成ApplicationListenerMethodAdapter
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_FACTORY_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(DefaultEventListenerFactory.class);
 			def.setSource(source);
