@@ -84,7 +84,13 @@ public class TransactionInterceptor extends TransactionAspectSupport implements 
 		setTransactionAttributeSource(tas);
 	}
 
-
+	/**
+	 * 事务方法是在这里执行，本质上是通过cglib代理对象执行到这里的，调用入口在{@link org.springframework.aop.framework.CglibAopProxy.DynamicAdvisedInterceptor}
+	 * DynamicAdvisedInterceptor执行intercept的时候，事务方法最终会跑到这里
+	 * @param invocation the method invocation joinpoint
+	 * @return
+	 * @throws Throwable
+	 */
 	@Override
 	public Object invoke(final MethodInvocation invocation) throws Throwable {
 		// Work out the target class: may be {@code null}.
@@ -93,9 +99,11 @@ public class TransactionInterceptor extends TransactionAspectSupport implements 
 		Class<?> targetClass = (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis()) : null);
 
 		// Adapt to TransactionAspectSupport's invokeWithinTransaction...
+		// 事务方法执行到这里，这里的callback就是一个内部类对象
 		return invokeWithinTransaction(invocation.getMethod(), targetClass, new InvocationCallback() {
 			@Override
 			public Object proceedWithInvocation() throws Throwable {
+				//本质上还是调用了CglibMethodInvocation对象的proceed方法，也就是说这里就是第二次进入proceed方法
 				return invocation.proceed();
 			}
 		});

@@ -255,6 +255,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 
 
 	/**
+	 * 代理对象执行事务方法进入这里，
 	 * General delegate for around-advice-based subclasses, delegating to several other template
 	 * methods on this class. Able to handle {@link CallbackPreferringPlatformTransactionManager}
 	 * as well as regular {@link PlatformTransactionManager} implementations.
@@ -272,23 +273,28 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		final PlatformTransactionManager tm = determineTransactionManager(txAttr);
 		final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
 
+		//首先创建TransactionInfo，然后执行代理对象的那个事务方法，如果抛出异常，则执行completeTransactionAfterThrowing
 		if (txAttr == null || !(tm instanceof CallbackPreferringPlatformTransactionManager)) {
 			// Standard transaction demarcation with getTransaction and commit/rollback calls.
+			// 分析当前方法是否已经存在事务，也就是事务传播机制就是在这里处理的，具体是在PlatformTransactionManager的getTransaction方法里面
 			TransactionInfo txInfo = createTransactionIfNecessary(tm, txAttr, joinpointIdentification);
 			Object retVal = null;
 			try {
 				// This is an around advice: Invoke the next interceptor in the chain.
 				// This will normally result in a target object being invoked.
+				// 本质上这里调用了CglibMethodInvocation对象的proceed方法，也就是说这里就是第二次进入proceed方法
 				retVal = invocation.proceedWithInvocation();
 			}
 			catch (Throwable ex) {
 				// target invocation exception
+				// 默认是只对Error和RuntimeException进行回滚，对于其他异常则不回滚
 				completeTransactionAfterThrowing(txInfo, ex);
 				throw ex;
 			}
 			finally {
 				cleanupTransactionInfo(txInfo);
 			}
+			//事务最终提交
 			commitTransactionAfterReturning(txInfo);
 			return retVal;
 		}

@@ -234,9 +234,16 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		return wrapIfNecessary(bean, beanName, cacheKey);
 	}
 
+	/**
+	 * 这个class一般默认是InfrastructureAdvisorAutoProxyCreator，是在spring配置事务过程中自动注册的InfrastructureAdvisorAutoProxyCreator
+	 * @param beanClass bean的class
+	 * @param beanName bean名称
+	 * @return
+	 * @throws BeansException
+	 */
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
-		Object cacheKey = getCacheKey(beanClass, beanName);
+		Object cacheKey = getCacheKey(beanClass, beanName);//返回bean实际的名称或beanClass
 
 		if (beanName == null || !this.targetSourcedBeans.contains(beanName)) {
 			if (this.advisedBeans.containsKey(cacheKey)) {
@@ -300,6 +307,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 
 	/**
+	 * 1.如果beanName不为空，则返回beanName（如果是FactoryBean则会增加一个前缀 &）
+	 * 2.如果beanName为空，则返回beanClass
 	 * Build a cache key for the given bean class and bean name.
 	 * <p>Note: As of 4.2.3, this implementation does not return a concatenated
 	 * class/name String anymore but rather the most efficient cache key possible:
@@ -340,11 +349,15 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		}
 
 		// Create proxy if we have advice.
+		// 这里一般是配置事务的时候自动注册的{@link BeanFactoryTransactionAttributeSourceAdvisor}，这底层会通过一些MethodMatcher进行扫描beanClass
+		// 最终会走到TransactionAttributeSourcePointcut的match方法里面，因为TransactionAttributeSourcePointcut是BeanFactoryTransactionAttributeSourceAdvisor的一个内部元素，
+		// 而且TransactionAttributeSourcePointcut本身也是一个MethodMatcher
+		// 最终通过canApply判断为true，则把Advisor数组返回
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
-		if (specificInterceptors != DO_NOT_PROXY) {
+		if (specificInterceptors != DO_NOT_PROXY) {//如果数组不为null
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
 			Object proxy = createProxy(
-					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
+					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));//通过cglib创建代理
 			this.proxyTypes.put(cacheKey, proxy.getClass());
 			return proxy;
 		}

@@ -149,14 +149,21 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 		this.arguments = arguments;
 	}
 
-
+	/**
+	 *
+	 * @return
+	 * @throws Throwable
+	 */
 	@Override
 	public Object proceed() throws Throwable {
 		//	We start with an index of -1 and increment early.
+		// 第一次进入这个方法currentInterceptorIndex为-1，第二次进入这个方法currentInterceptorIndex为0
 		if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
+			//第二次进来这个方法的时候，调用代理对象的原始方法，一般是执行到TransactionAspectSupport的invokeWithinTransaction方法后才会第二次进入该方法
 			return invokeJoinpoint();
 		}
 
+		//第一次进来之后currentInterceptorIndex会加1
 		Object interceptorOrInterceptionAdvice =
 				this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
 		if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
@@ -173,9 +180,10 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 				return proceed();
 			}
 		}
-		else {
+		else {//事务方法一般是进入这里
 			// It's an interceptor, so we just invoke it: The pointcut will have
 			// been evaluated statically before this object was constructed.
+			//interceptorOrInterceptionAdvice是默认的TransactionInterceptor，最后进入TransactionInterceptor的invoke方法里面
 			return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
 		}
 	}

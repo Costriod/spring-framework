@@ -654,20 +654,27 @@ class CglibAopProxy implements AopProxy, Serializable {
 				if (target != null) {
 					targetClass = target.getClass();
 				}
+
+				//这里会对方法进行匹配，如果匹配到，那么就会返回MethodInterceptor对象list，比如spring项目配置事务，会注册TransactionInterceptor这一个bean
+				//对于那种带有@Transactional注解的方法，spring在InfrastructureAdvisorAutoProxyCreator里面就会对这个bean生成一个cglib代理类对象，
+				//详情参考InfrastructureAdvisorAutoProxyCreator的父类AbstractAutoProxyCreator的postProcessAfterInitialization方法
 				List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 				Object retVal;
 				// Check whether we only have one InvokerInterceptor: that is,
 				// no real advice, but just reflective invocation of the target.
+				// 如果获取到的chain为空，也就是那种没有@Transactional注解的方法
 				if (chain.isEmpty() && Modifier.isPublic(method.getModifiers())) {
 					// We can skip creating a MethodInvocation: just invoke the target directly.
 					// Note that the final invoker must be an InvokerInterceptor, so we know
 					// it does nothing but a reflective operation on the target, and no hot
 					// swapping or fancy proxying.
 					Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
+					//直接调用代理对象方法，本质上还是调用了原始对象方法
 					retVal = methodProxy.invoke(target, argsToUse);
 				}
-				else {
+				else {//如果chain不为空，那么一般chain里面就一个元素TransactionInterceptor
 					// We need to create a method invocation...
+					//这里创建一个CglibMethodInvocation，执行proceed
 					retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
 				}
 				retVal = processReturnType(proxy, target, method, retVal);

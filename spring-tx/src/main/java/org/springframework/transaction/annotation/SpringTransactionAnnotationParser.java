@@ -38,6 +38,11 @@ import org.springframework.transaction.interceptor.TransactionAttribute;
 @SuppressWarnings("serial")
 public class SpringTransactionAnnotationParser implements TransactionAnnotationParser, Serializable {
 
+	/**
+	 * 解析方法上面的@Transactional注解，主要解析propagation、isolation、timeout、readOnly、value、rollbackFor、noRollbackFor属性
+	 * @param element the annotated method or class
+	 * @return
+	 */
 	@Override
 	public TransactionAttribute parseTransactionAnnotation(AnnotatedElement element) {
 		AnnotationAttributes attributes = AnnotatedElementUtils.getMergedAnnotationAttributes(
@@ -54,6 +59,11 @@ public class SpringTransactionAnnotationParser implements TransactionAnnotationP
 		return parseTransactionAnnotation(AnnotationUtils.getAnnotationAttributes(ann, false, false));
 	}
 
+	/**
+	 * 解析@Transactional注解的propagation、isolation、timeout、readOnly、value、rollbackFor、noRollbackFor属性
+	 * @param attributes
+	 * @return
+	 */
 	protected TransactionAttribute parseTransactionAnnotation(AnnotationAttributes attributes) {
 		RuleBasedTransactionAttribute rbta = new RuleBasedTransactionAttribute();
 
