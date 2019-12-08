@@ -1035,7 +1035,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					//先利用InstantiationAwareBeanPostProcessor执行bean初始化前的操作，有可能会初始化一个bean返回，也有可能返回null
 					bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
 					if (bean != null) {
-						//bean初始化完成后执行后置处理操作
+						//bean初始化完成后执行后置处理操作，这里就可能生成一个代理对象
 						bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
 					}
 				}

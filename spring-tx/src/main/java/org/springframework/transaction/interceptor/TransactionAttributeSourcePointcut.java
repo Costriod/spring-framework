@@ -19,6 +19,7 @@ package org.springframework.transaction.interceptor;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
+import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
 import org.springframework.util.ObjectUtils;
 
@@ -32,12 +33,24 @@ import org.springframework.util.ObjectUtils;
 @SuppressWarnings("serial")
 abstract class TransactionAttributeSourcePointcut extends StaticMethodMatcherPointcut implements Serializable {
 
+	/**
+	 * 一般是{@link org.springframework.aop.support.AopUtils#canApply(Pointcut, Class, boolean)}这个方法转入这里来
+	 * @param method the candidate method
+	 * @param targetClass targetClass代表beanClass，当然有可能传入的是null
+	 * the target class (may be {@code null}, in which case
+	 * the candidate class must be taken to be the method's declaring class)
+	 * @return
+	 */
 	@Override
 	public boolean matches(Method method, Class<?> targetClass) {
+		//targetClass如果实现了TransactionalProxy接口，则返回false
 		if (targetClass != null && TransactionalProxy.class.isAssignableFrom(targetClass)) {
 			return false;
 		}
+		//这里一般是返回AnnotationTransactionAttributeSource或者NameMatchTransactionAttributeSource
 		TransactionAttributeSource tas = getTransactionAttributeSource();
+		//一般会走到AbstractFallbackTransactionAttributeSource#getTransactionAttribute()方法里面
+		//其实就是扫描class或者method上面的事务配置（比如@Transactional），只要扫描到了就返回true
 		return (tas == null || tas.getTransactionAttribute(method, targetClass) != null);
 	}
 

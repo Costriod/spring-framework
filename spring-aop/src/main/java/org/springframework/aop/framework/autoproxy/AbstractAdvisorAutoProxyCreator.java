@@ -64,7 +64,14 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 		this.advisorRetrievalHelper = new BeanFactoryAdvisorRetrievalHelperAdapter(beanFactory);
 	}
 
-
+	/**
+	 * 找出所有Advisor，然后遍历，每个Advisor找出其中的PointCut，然后通过PointCut的methodMatcher对beanClass里面的方法进行特征值匹配
+	 * 比如PointCut的methodMatcher匹配到了method或者class上面的事务注解@Transactional，只有匹配到了的Advisor才会返回到这里的advisors里面
+	 * @param beanClass the class of the bean to advise
+	 * @param beanName the name of the bean
+	 * @param targetSource
+	 * @return
+	 */
 	@Override
 	protected Object[] getAdvicesAndAdvisorsForBean(Class<?> beanClass, String beanName, TargetSource targetSource) {
 		List<Advisor> advisors = findEligibleAdvisors(beanClass, beanName);
@@ -85,16 +92,20 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	 * @see #extendAdvisors
 	 */
 	protected List<Advisor> findEligibleAdvisors(Class<?> beanClass, String beanName) {
+		//第一步找出所有实现了Advisor接口的bean（并且是getBean主动实例化后的bean对象）
 		List<Advisor> candidateAdvisors = findCandidateAdvisors();
+		//第二步，遍历所有Advisor，通过Advisor里面的PointCut对象对method进行扫描，通过PointCut的MethodMatcher对method进行特征值判定，
+		//比如判定某个方法是否有事务注解配置，只有匹配到了的Advisor才会返回到这里
 		List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
-		extendAdvisors(eligibleAdvisors);
+		extendAdvisors(eligibleAdvisors);//默认啥也不干
 		if (!eligibleAdvisors.isEmpty()) {
-			eligibleAdvisors = sortAdvisors(eligibleAdvisors);
+			eligibleAdvisors = sortAdvisors(eligibleAdvisors);//排序
 		}
 		return eligibleAdvisors;
 	}
 
 	/**
+	 * 返回所有实现了Advisor接口的bean（并且是getBean主动实例化后的bean对象）
 	 * Find all candidate Advisors to use in auto-proxying.
 	 * @return the List of candidate Advisors
 	 */
@@ -103,6 +114,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	}
 
 	/**
+	 * 本质上是通过Advisor里面的PointCut对象对method进行扫描，通过PointCut的MethodMatcher对method进行特征值判定，比如判定某个方法是否有事务注解配置
 	 * Search the given candidate Advisors to find all Advisors that
 	 * can apply to the specified bean.
 	 * @param candidateAdvisors the candidate Advisors
@@ -124,6 +136,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	}
 
 	/**
+	 * 一般默认是InfrastructureAdvisorAutoProxyCreator，所以需要走到子类方法里面看看
 	 * Return whether the Advisor bean with the given name is eligible
 	 * for proxying in the first place.
 	 * @param beanName the name of the Advisor bean
@@ -180,6 +193,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 
 		@Override
 		protected boolean isEligibleBean(String beanName) {
+			//这个一般是InfrastructureAdvisorAutoProxyCreator的isEligibleAdvisorBean方法
 			return AbstractAdvisorAutoProxyCreator.this.isEligibleAdvisorBean(beanName);
 		}
 	}

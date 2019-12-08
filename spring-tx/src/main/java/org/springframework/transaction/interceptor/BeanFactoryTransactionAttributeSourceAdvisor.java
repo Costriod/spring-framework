@@ -19,6 +19,7 @@ package org.springframework.transaction.interceptor;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 
 /**
  * Advisor driven by a {@link TransactionAttributeSource}, used to include
@@ -32,7 +33,9 @@ import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
  */
 @SuppressWarnings("serial")
 public class BeanFactoryTransactionAttributeSourceAdvisor extends AbstractBeanFactoryPointcutAdvisor {
-
+	/**
+	 * 这个一般是{@link AnnotationTransactionAttributeSource} 或者 {@link NameMatchTransactionAttributeSource}
+	 */
 	private TransactionAttributeSource transactionAttributeSource;
 
 	private final TransactionAttributeSourcePointcut pointcut = new TransactionAttributeSourcePointcut() {

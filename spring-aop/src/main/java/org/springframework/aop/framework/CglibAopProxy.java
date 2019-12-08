@@ -158,19 +158,22 @@ class CglibAopProxy implements AopProxy, Serializable {
 		}
 
 		try {
+			//rootClass就是需要代理的class
 			Class<?> rootClass = this.advised.getTargetClass();
 			Assert.state(rootClass != null, "Target class must be available for creating a CGLIB proxy");
 
 			Class<?> proxySuperClass = rootClass;
-			if (ClassUtils.isCglibProxyClass(rootClass)) {
+			if (ClassUtils.isCglibProxyClass(rootClass)) {//如果已经被cglib代理过了
 				proxySuperClass = rootClass.getSuperclass();
 				Class<?>[] additionalInterfaces = rootClass.getInterfaces();
-				for (Class<?> additionalInterface : additionalInterfaces) {
+				for (Class<?> additionalInterface : additionalInterfaces) {//重新加入原始类的所有interface
 					this.advised.addInterface(additionalInterface);
 				}
 			}
 
 			// Validate the class, writing log messages as necessary.
+			// 如果rootClass有final方法，有的话就会打warn级别日志，因为cglib不支持final方法代理
+			// 如果rootClass有那种仅当前包可见的方法（也就是方法没有public/private/protected修饰），这里也会打日志
 			validateClassIfNecessary(proxySuperClass, classLoader);
 
 			// Configure CGLIB Enhancer...
@@ -183,6 +186,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 			}
 			enhancer.setSuperclass(proxySuperClass);
+			//自动给代理类增加接口SpringProxy、Advised、DecoratingProxy
 			enhancer.setInterfaces(AopProxyUtils.completeProxiedInterfaces(this.advised));
 			enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
 			enhancer.setStrategy(new ClassLoaderAwareUndeclaredThrowableStrategy(classLoader));
@@ -308,10 +312,11 @@ class CglibAopProxy implements AopProxy, Serializable {
 				new StaticDispatcher(this.advised.getTargetSource().getTarget()) : new SerializableNoOp());
 
 		Callback[] mainCallbacks = new Callback[] {
-				aopInterceptor,  // for normal advice
-				targetInterceptor,  // invoke target without considering advice, if optimized
-				new SerializableNoOp(),  // no override for methods mapped to this
-				targetDispatcher, this.advisedDispatcher,
+				aopInterceptor,  // 默认的DynamicAdvisedInterceptor，执行advice增强
+				targetInterceptor,  // 直接执行原始对象方法，不考虑advice增强, 前提是if optimized
+				new SerializableNoOp(),  // 不执行任何操作
+				targetDispatcher, // StaticDispatcher或者SerializableNoOp
+				this.advisedDispatcher,// AdvisedDispatcher
 				new EqualsInterceptor(this.advised),
 				new HashCodeInterceptor(this.advised)
 		};
@@ -514,6 +519,9 @@ class CglibAopProxy implements AopProxy, Serializable {
 
 		private Object target;
 
+		/**
+		 * @param target 就是原始bean对象
+		 */
 		public StaticDispatcher(Object target) {
 			this.target = target;
 		}
@@ -670,7 +678,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 					// swapping or fancy proxying.
 					Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
 					//直接调用代理对象方法，本质上还是调用了原始对象方法
-					retVal = methodProxy.invoke(target, argsToUse);
+					retVal = methodProxy.invoke(target, argsToUse);//invokeSuper才是直接调用原始对象方法
 				}
 				else {//如果chain不为空，那么一般chain里面就一个元素TransactionInterceptor
 					// We need to create a method invocation...
@@ -806,28 +814,28 @@ class CglibAopProxy implements AopProxy, Serializable {
 		public int accept(Method method) {
 			if (AopUtils.isFinalizeMethod(method)) {
 				logger.debug("Found finalize() method - using NO_OVERRIDE");
-				return NO_OVERRIDE;
+				return NO_OVERRIDE;//如果方法是finalize，什么都不干
 			}
 			if (!this.advised.isOpaque() && method.getDeclaringClass().isInterface() &&
-					method.getDeclaringClass().isAssignableFrom(Advised.class)) {
+					method.getDeclaringClass().isAssignableFrom(Advised.class)) {//如果method是Advised声明的
 				if (logger.isDebugEnabled()) {
 					logger.debug("Method is declared on Advised interface: " + method);
 				}
-				return DISPATCH_ADVISED;
+				return DISPATCH_ADVISED;//执行AdvisedDispatcher的方法
 			}
 			// We must always proxy equals, to direct calls to this.
-			if (AopUtils.isEqualsMethod(method)) {
+			if (AopUtils.isEqualsMethod(method)) {//如果是执行equals方法
 				if (logger.isDebugEnabled()) {
 					logger.debug("Found 'equals' method: " + method);
 				}
-				return INVOKE_EQUALS;
+				return INVOKE_EQUALS;//EqualsInterceptor的方法
 			}
 			// We must always calculate hashCode based on the proxy.
-			if (AopUtils.isHashCodeMethod(method)) {
+			if (AopUtils.isHashCodeMethod(method)) {//如果是执行hashCode方法
 				if (logger.isDebugEnabled()) {
 					logger.debug("Found 'hashCode' method: " + method);
 				}
-				return INVOKE_HASHCODE;
+				return INVOKE_HASHCODE;//执行HashCodeInterceptor的方法
 			}
 			Class<?> targetClass = this.advised.getTargetClass();
 			// Proxy is not yet available, but that shouldn't matter.
@@ -842,7 +850,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 					if (logger.isDebugEnabled()) {
 						logger.debug("Must expose proxy on advised method: " + method);
 					}
-					return AOP_PROXY;
+					return AOP_PROXY;//执行DynamicAdvisedInterceptor
 				}
 				String key = method.toString();
 				// Check to see if we have fixed interceptor to serve this method.
@@ -859,7 +867,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 					if (logger.isDebugEnabled()) {
 						logger.debug("Unable to apply any optimizations to advised method: " + method);
 					}
-					return AOP_PROXY;
+					return AOP_PROXY;//执行DynamicAdvisedInterceptor
 				}
 			}
 			else {

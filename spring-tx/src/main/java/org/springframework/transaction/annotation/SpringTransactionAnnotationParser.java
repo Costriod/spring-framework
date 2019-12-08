@@ -45,6 +45,7 @@ public class SpringTransactionAnnotationParser implements TransactionAnnotationP
 	 */
 	@Override
 	public TransactionAttribute parseTransactionAnnotation(AnnotatedElement element) {
+		//读取class或者method的Transactional注解信息
 		AnnotationAttributes attributes = AnnotatedElementUtils.getMergedAnnotationAttributes(
 				element, Transactional.class);
 		if (attributes != null) {

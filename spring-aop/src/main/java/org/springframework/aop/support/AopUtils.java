@@ -206,6 +206,8 @@ public abstract class AopUtils {
 	}
 
 	/**
+	 * 其实就是扫描method，通过MethodMatcher或者IntroductionAwareMethodMatcher按照自定义规则进行匹配操作
+	 * 比如匹配事务@Transactional注解配置信息扫描，本质上是通过TransactionAttributeSourcePointcut实现扫描（底层是SpringTransactionAnnotationParser实现的）
 	 * Can the given pointcut apply at all on the given class?
 	 * <p>This is an important test as it can be used to optimize
 	 * out a pointcut for a class.
@@ -217,10 +219,11 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(pc, "Pointcut must not be null");
-		if (!pc.getClassFilter().matches(targetClass)) {
+		if (!pc.getClassFilter().matches(targetClass)) {//通过ClassFilter的matches返回false，则直接返回false
 			return false;
 		}
-
+		//一般传进来的Pointcut是TransactionAttributeSourcePointcut，而且getMethodMatcher方法返回的就是
+		//TransactionAttributeSourcePointcut本身，因为TransactionAttributeSourcePointcut本身实现了MethodMatcher
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
@@ -232,13 +235,19 @@ public abstract class AopUtils {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
 		}
 
+		//返回targetClass实现的所有接口，包括父类
 		Set<Class<?>> classes = new LinkedHashSet<Class<?>>(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 		classes.add(targetClass);
 		for (Class<?> clazz : classes) {
+			//返回class的所有方法，包括父类和接口的方法
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
 			for (Method method : methods) {
+				//要么通过introductionAwareMethodMatcher.matches或者methodMatcher.matches方法进行匹配
+				//一般introductionAwareMethodMatcher是null，而methodMatcher一般是TransactionAttributeSourcePointcut
 				if ((introductionAwareMethodMatcher != null &&
 						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions)) ||
+						//通过methodMatcher对method进行匹配操作，匹配到则返回true，根据不同匹配规则有不同的实现
+						//例如通过TransactionAttributeSourcePointcut读取method或者class的事务配置，找到了事务配置就为true
 						methodMatcher.matches(method, targetClass)) {
 					return true;
 				}
@@ -249,6 +258,7 @@ public abstract class AopUtils {
 	}
 
 	/**
+	 * 本质上是通过Advisor里面的PointCut对象对method进行扫描，通过PointCut的MethodMatcher对method进行特征值判定，比如判定某个方法是否有事务注解配置
 	 * Can the given advisor apply at all on the given class?
 	 * This is an important test as it can be used to optimize
 	 * out a advisor for a class.
@@ -261,6 +271,8 @@ public abstract class AopUtils {
 	}
 
 	/**
+	 * 其实就是扫描method，通过MethodMatcher或者IntroductionAwareMethodMatcher按照自定义规则进行匹配操作
+	 * 比如匹配事务@Transactional注解配置信息扫描，本质上是通过TransactionAttributeSourcePointcut实现扫描（底层是SpringTransactionAnnotationParser实现的）
 	 * Can the given advisor apply at all on the given class?
 	 * <p>This is an important test as it can be used to optimize out a advisor for a class.
 	 * This version also takes into account introductions (for IntroductionAwareMethodMatchers).
@@ -271,24 +283,29 @@ public abstract class AopUtils {
 	 * @return whether the pointcut can apply on any method
 	 */
 	public static boolean canApply(Advisor advisor, Class<?> targetClass, boolean hasIntroductions) {
-		if (advisor instanceof IntroductionAdvisor) {
+		if (advisor instanceof IntroductionAdvisor) {//如果是IntroductionAdvisor，则通过matches方法判断
 			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
 		}
-		else if (advisor instanceof PointcutAdvisor) {
+		else if (advisor instanceof PointcutAdvisor) {//如果是PointcutAdvisor
+			//一般是BeanFactoryTransactionAttributeSourceAdvisor，这个是配置了事务自动注册的bean
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
+			//这里通过pointcut扫描，本质上是通过MethodMatcher或者IntroductionAwareMethodMatcher按照自定义规则进行匹配操作
+			//例如BeanFactoryTransactionAttributeSourceAdvisor内部的pointcut（也就是TransactionAttributeSourcePointcut）
+			//TransactionAttributeSourcePointcut底层是通过SpringTransactionAnnotationParser扫描事务注解，只要扫描到就返回true
 			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
 		}
-		else {
+		else {//其余情况一律为true
 			// It doesn't have a pointcut so we assume it applies.
 			return true;
 		}
 	}
 
 	/**
+	 * 本质上是通过Advisor里面的PointCut对象对method进行扫描，通过PointCut的MethodMatcher对method进行特征值判定，比如判定某个方法是否有事务注解配置
 	 * Determine the sublist of the {@code candidateAdvisors} list
 	 * that is applicable to the given class.
-	 * @param candidateAdvisors the Advisors to evaluate
-	 * @param clazz the target class
+	 * @param candidateAdvisors spring内部注册的Advisor对象list
+	 * @param clazz 要比较的class
 	 * @return sublist of Advisors that can apply to an object of the given class
 	 * (may be the incoming List as-is)
 	 */
@@ -298,16 +315,19 @@ public abstract class AopUtils {
 		}
 		List<Advisor> eligibleAdvisors = new LinkedList<Advisor>();
 		for (Advisor candidate : candidateAdvisors) {
+			//如果是IntroductionAdvisor类型，并且通过了methodMatcher的匹配
 			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
 				eligibleAdvisors.add(candidate);
 			}
 		}
 		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
 		for (Advisor candidate : candidateAdvisors) {
+			//如果是IntroductionAdvisor类型，这个在上面匹配过了，就不用重复匹配
 			if (candidate instanceof IntroductionAdvisor) {
 				// already processed
 				continue;
 			}
+			//如果是其他Advisor类型，并且通过了methodMatcher的匹配
 			if (canApply(candidate, clazz, hasIntroductions)) {
 				eligibleAdvisors.add(candidate);
 			}

@@ -31,7 +31,9 @@ import org.springframework.util.Assert;
  */
 @SuppressWarnings("serial")
 public class ProxyCreatorSupport extends AdvisedSupport {
-
+	/**
+	 * 一般是默认的{@link DefaultAopProxyFactory}
+	 */
 	private AopProxyFactory aopProxyFactory;
 
 	private final List<AdvisedSupportListener> listeners = new LinkedList<AdvisedSupportListener>();
@@ -102,6 +104,7 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 		if (!this.active) {
 			activate();
 		}
+		//这里就会返回一个ObjenesisCglibAopProxy（cglib，用来代理class）或者JdkDynamicAopProxy（jdk的代理，用来代理interface）
 		return getAopProxyFactory().createAopProxy(this);
 	}
 

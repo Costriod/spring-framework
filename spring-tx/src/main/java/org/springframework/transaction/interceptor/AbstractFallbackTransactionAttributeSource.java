@@ -80,6 +80,7 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 
 
 	/**
+	 * 其实这个方法是扫描class或者method，扫描出其中配置的事务信息
 	 * Determine the transaction attribute for this method invocation.
 	 * <p>Defaults to the class's transaction attribute if no method attribute is found.
 	 * @param method the method for the current invocation (never {@code null})
@@ -107,13 +108,17 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 			}
 		}
 		else {
-			// We need to work it out.
+			// 找出方法对应的事务配置信息有这么几种情况：
+			// 1.如果IParent接口声明了一个带@Transactional注解的方法，那么子类的这个方法可直接继承接口的事务配置信息
+			// 2.如果Parent类（不是接口）声明了一个带@Transactional注解的方法，而且子类beanClass又覆盖了父类方法，
+			// 此时子类方法是无法继承父类方法里面的事务配置信息，在这种情况下，子类也必须手工给方法加上@Transactional
 			TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
 			// Put it in the cache.
 			if (txAttr == null) {
 				this.attributeCache.put(cacheKey, NULL_TRANSACTION_ATTRIBUTE);
 			}
 			else {
+				//获取方法名全称（包括class前缀）
 				String methodIdentification = ClassUtils.getQualifiedMethodName(method, targetClass);
 				if (txAttr instanceof DefaultTransactionAttribute) {
 					((DefaultTransactionAttribute) txAttr).setDescriptor(methodIdentification);
@@ -153,34 +158,38 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 		}
 
 		// Ignore CGLIB subclasses - introspect the actual user class.
+		// 获取原始class，因为有可能这个targetClass是springcglib代理过后的子类
 		Class<?> userClass = ClassUtils.getUserClass(targetClass);
 		// The method may be on an interface, but we need attributes from the target class.
 		// If the target class is null, the method will be unchanged.
+		// 获取实际方法，因为有可能该方法是接口声明的，但是这里需要找到子类里面的方法
 		Method specificMethod = ClassUtils.getMostSpecificMethod(method, userClass);
 		// If we are dealing with method with generic parameters, find the original method.
+		// 如果方法里面有泛型参数，则返回其原始方法（因为泛型参数的方法会在编译期间生成一个bridge方法）
 		specificMethod = BridgeMethodResolver.findBridgedMethod(specificMethod);
 
-		// First try is the method in the target class.
+		// 寻找到TransactionAttribute，这是一个抽象方法，具体实现在子类AnnotationTransactionAttributeSource或NameMatchTransactionAttributeSource
+		// 本质上是通过TransactionAnnotationParser进行扫描事务配置，比如SpringTransactionAnnotationParser扫描方法上面@Transactional注解
 		TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
 		if (txAttr != null) {
 			return txAttr;
 		}
 
-		// Second try is the transaction attribute on the target class.
+		// 如果前面扫描到的方法里面没有@Transactional注解信息，那么就在这里扫描class上面的@Transactional注解
 		txAttr = findTransactionAttribute(specificMethod.getDeclaringClass());
 		if (txAttr != null && ClassUtils.isUserLevelMethod(method)) {
 			return txAttr;
 		}
 
-		if (specificMethod != method) {
+		if (specificMethod != method) {//如果还是找不着，那就从父接口里面找@Transactional注解信息
 			// Fallback is to look at the original method.
-			txAttr = findTransactionAttribute(method);
+			txAttr = findTransactionAttribute(method);//从父接口的方法里面找
 			if (txAttr != null) {
 				return txAttr;
 			}
 			// Last fallback is the class of the original method.
 			txAttr = findTransactionAttribute(method.getDeclaringClass());
-			if (txAttr != null && ClassUtils.isUserLevelMethod(method)) {
+			if (txAttr != null && ClassUtils.isUserLevelMethod(method)) {//从父接口class上面标注的注解里面找
 				return txAttr;
 			}
 		}
@@ -198,6 +207,7 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 	protected abstract TransactionAttribute findTransactionAttribute(Class<?> clazz);
 
 	/**
+	 * 这是一个抽象方法，具体实现在子类AnnotationTransactionAttributeSource或NameMatchTransactionAttributeSource
 	 * Subclasses need to implement this to return the transaction attribute for the
 	 * given method, if any.
 	 * @param method the method to retrieve the attribute for

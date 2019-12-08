@@ -127,18 +127,30 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 		this.annotationParsers = annotationParsers;
 	}
 
-
+	/**
+	 * 通过遍历所有TransactionAnnotationParser，一般是SpringTransactionAnnotationParser
+	 * 其实就是找出类上面标注的@Transactional配置信息
+	 * @param clazz the class to retrieve the attribute for
+	 * @return
+	 */
 	@Override
 	protected TransactionAttribute findTransactionAttribute(Class<?> clazz) {
 		return determineTransactionAttribute(clazz);
 	}
 
+	/**
+	 * 通过遍历所有TransactionAnnotationParser，一般是SpringTransactionAnnotationParser
+	 * 其实就是找出方法上面标注的@Transactional配置信息
+	 * @param method the method to retrieve the attribute for
+	 * @return
+	 */
 	@Override
 	protected TransactionAttribute findTransactionAttribute(Method method) {
 		return determineTransactionAttribute(method);
 	}
 
 	/**
+	 * 遍历所有TransactionAnnotationParser，但是一般只有一个SpringTransactionAnnotationParser
 	 * Determine the transaction attribute for the given method or class.
 	 * <p>This implementation delegates to configured
 	 * {@link TransactionAnnotationParser TransactionAnnotationParsers}
@@ -151,6 +163,8 @@ public class AnnotationTransactionAttributeSource extends AbstractFallbackTransa
 	protected TransactionAttribute determineTransactionAttribute(AnnotatedElement element) {
 		if (element.getAnnotations().length > 0) {
 			for (TransactionAnnotationParser annotationParser : this.annotationParsers) {
+				//通过SpringTransactionAnnotationParser找出事务配置属性，其实就是找出方法上面标注的@Transactional配置信息
+				//如果方法上面没有@Transactional，那么就读取class上面的@Transactional信息
 				TransactionAttribute attr = annotationParser.parseTransactionAnnotation(element);
 				if (attr != null) {
 					return attr;
