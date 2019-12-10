@@ -181,10 +181,9 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 				return proceed();
 			}
 		}
-		else {//事务方法一般是进入这里
+		else {
 			// It's an interceptor, so we just invoke it: The pointcut will have
 			// been evaluated statically before this object was constructed.
-			//interceptorOrInterceptionAdvice是默认的TransactionInterceptor，最后进入TransactionInterceptor的invoke方法里面
 			return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
 		}
 	}

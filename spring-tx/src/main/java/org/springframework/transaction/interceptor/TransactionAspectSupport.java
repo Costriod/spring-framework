@@ -269,6 +269,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			throws Throwable {
 
 		// If the transaction attribute is null, the method is non-transactional.
+		//读取方法上面的事务配置信息（优先读取方法上面的事务配置，如果方法上面没有配置则从类上面找）
 		final TransactionAttribute txAttr = getTransactionAttributeSource().getTransactionAttribute(method, targetClass);
 		final PlatformTransactionManager tm = determineTransactionManager(txAttr);
 		final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
@@ -439,12 +440,9 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 	 * Create a transaction if necessary based on the given TransactionAttribute.
 	 * <p>Allows callers to perform custom TransactionAttribute lookups through
 	 * the TransactionAttributeSource.
-	 * @param txAttr the TransactionAttribute (may be {@code null})
-	 * @param joinpointIdentification the fully qualified method name
-	 * (used for monitoring and logging purposes)
-	 * @return a TransactionInfo object, whether or not a transaction was created.
-	 * The {@code hasTransaction()} method on TransactionInfo can be used to
-	 * tell if there was a transaction created.
+	 * @param txAttr 方法上面的事务配置，可能为null
+	 * @param joinpointIdentification 方法全名（包括class前缀）
+	 * @return 无论是否开启事务，这个方法都会返回一个TransactionInfo，内部的{@code hasTransaction()}方法会确认有没有开启事务
 	 * @see #getTransactionAttributeSource()
 	 */
 	@SuppressWarnings("serial")
