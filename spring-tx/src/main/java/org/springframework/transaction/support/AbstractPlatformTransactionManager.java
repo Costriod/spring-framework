@@ -379,13 +379,14 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 				logger.debug("Creating new transaction with name [" + definition.getName() + "]: " + definition);
 			}
 			try {
+				//Synchronization用于在事务执行过程中的重要时间点执行额外的逻辑
 				boolean newSynchronization = (getTransactionSynchronization() != SYNCHRONIZATION_NEVER);
 				//返回一个DefaultTransactionStatus
 				DefaultTransactionStatus status = newTransactionStatus(
 						definition, transaction, true, newSynchronization, debugEnabled, suspendedResources);
 				//其实就是创建connection以及执行一些普通操作
 				doBegin(transaction, definition);
-				//设置一些ThreadLocal变量，前提newSynchronization为true并且没有设置SynchronizationActive
+				//设置一些ThreadLocal变量，前提newSynchronization为true
 				prepareSynchronization(status, definition);
 				return status;
 			}
@@ -438,10 +439,13 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 			}
 			SuspendedResourcesHolder suspendedResources = suspend(transaction);
 			try {
+				//Synchronization用于在事务执行过程中的重要时间点执行额外的逻辑
 				boolean newSynchronization = (getTransactionSynchronization() != SYNCHRONIZATION_NEVER);
 				DefaultTransactionStatus status = newTransactionStatus(
 						definition, transaction, true, newSynchronization, debugEnabled, suspendedResources);
+				//其实就是创建connection以及执行一些普通操作
 				doBegin(transaction, definition);
+				//设置一些ThreadLocal变量，前提newSynchronization为true
 				prepareSynchronization(status, definition);
 				return status;
 			}
@@ -514,8 +518,16 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	}
 
 	/**
-	 * Create a new TransactionStatus for the given arguments,
-	 * also initializing transaction synchronization as appropriate.
+	 * 创建一个TransactionStatus对象，同时也会初始化对应的transaction synchronization
+	 * Synchronization用于在事务执行过程中的重要时间点执行额外的逻辑
+	 *
+	 * @param definition 这个就是txAttr也就是事务方法上面配置的事务信息
+	 * @param transaction 外层事务（父事务），可能为null
+	 * @param newTransaction 是否需要创建新事务
+	 * @param newSynchronization 是否需要创建新的Synchronization，Synchronization用于在事务执行过程中的重要时间点执行额外的逻辑
+	 * @param debug 是否debug模式
+	 * @param suspendedResources 外部事务挂起的资源对象（可通过该对象将事务挂起状态恢复过来）
+	 * @return
 	 * @see #newTransactionStatus
 	 * @see #prepareTransactionStatus
 	 */
@@ -530,7 +542,16 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	}
 
 	/**
-	 * Create a TransactionStatus instance for the given arguments.
+	 *
+	 * 创建一个TransactionStatus
+	 *
+	 * @param definition 这个就是txAttr也就是事务方法上面配置的事务信息
+	 * @param transaction 外层事务（父事务），可能为null
+	 * @param newTransaction 是否需要创建新事务
+	 * @param newSynchronization 是否需要创建新的Synchronization，Synchronization用于在事务执行过程中的重要时间点执行额外的逻辑
+	 * @param debug 是否debug模式
+	 * @param suspendedResources 外部事务挂起的资源对象（可通过该对象将事务挂起状态恢复过来）
+	 * @return
 	 */
 	protected DefaultTransactionStatus newTransactionStatus(
 			TransactionDefinition definition, Object transaction, boolean newTransaction,
@@ -544,7 +565,8 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	}
 
 	/**
-	 * Initialize transaction synchronization as appropriate.
+	 * 初始化当前线程的Synchronization，也就是初始化ThreadLocal变量
+	 * Synchronization用于在事务执行过程中的重要时间点执行额外的逻辑
 	 */
 	protected void prepareSynchronization(DefaultTransactionStatus status, TransactionDefinition definition) {
 		if (status.isNewSynchronization()) {

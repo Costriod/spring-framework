@@ -295,7 +295,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 			finally {
 				cleanupTransactionInfo(txInfo);
 			}
-			//事务最终提交
+			//事务最终提交，也会做一些后置处理操作（也就执行TransactionSynchronization的一些操作）
 			commitTransactionAfterReturning(txInfo);
 			return retVal;
 		}
@@ -462,6 +462,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 		TransactionStatus status = null;
 		if (txAttr != null) {
 			if (tm != null) {
+				//一般返回DefaultTransactionStatus
 				status = tm.getTransaction(txAttr);
 			}
 			else {
@@ -471,6 +472,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 				}
 			}
 		}
+		//根据TransactionStatus创建一个TransactionInfo对象
 		return prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
 	}
 
