@@ -354,6 +354,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		//找出所有Advisor，然后遍历，每个Advisor找出其中的PointCut，然后通过PointCut的methodMatcher对beanClass里面的方法进行特征值匹配
 		//比如PointCut的MethodMatcher匹配到了method或者class上面的事务注解@Transactional，只有匹配到了的Advisor才会返回到这里的advisors里面
 		//参考配置事务的时候自动注册的{@link BeanFactoryTransactionAttributeSourceAdvisor}
+		//又比如我们配置AOP的时候，也是会进入到这里
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {//如果数组不为null，也就意味着Advisor匹配到了class或者method的特征值
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);

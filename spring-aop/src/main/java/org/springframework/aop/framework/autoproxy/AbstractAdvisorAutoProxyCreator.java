@@ -82,6 +82,8 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 	}
 
 	/**
+	 * 1.第一步找出所有实现了Advisor接口的bean（并且是getBean主动实例化后的bean对象）
+	 * 2.第二步，遍历所有Advisor，通过Advisor里面的PointCut对象对method进行扫描，通过PointCut的MethodMatcher对method进行特征值判定，比如判定某个方法是否有事务注解配置，只有匹配到了的Advisor才会返回到这里
 	 * Find all eligible Advisors for auto-proxying this class.
 	 * @param beanClass the clazz to find advisors for
 	 * @param beanName the name of the currently proxied bean

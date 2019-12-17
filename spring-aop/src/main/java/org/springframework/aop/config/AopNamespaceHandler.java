@@ -62,8 +62,45 @@ public class AopNamespaceHandler extends NamespaceHandlerSupport {
 	@Override
 	public void init() {
 		// In 2.0 XSD as well as in 2.1 XSD.
+		/**
+		 * 一般我们配置aop使用的是下面的xml
+		 * <aop:config>
+		 *     <!-- 配置切入点 expression填写切入点表达式 -->
+		 *     <!-- 双引号里面的内容必须写上execution前缀 -->
+		 *     <aop:pointcut expression="execution(* com.*.*(..))" id="pointcut"/>
+		 *     <!-- 配置切面 切面是切入点和通知的结合 -->
+		 *     <aop:aspect ref="自定义增强Advise（无需实现Advice接口）">
+		 *         <!-- <aop:aspect>标签内也可以配置pointcut -->
+		 *         <aop:pointcut expression="execution(* com.*.*(..))" id="pointcut2"/>
+		 *         <!-- <aop:aspect>标签内可以配置declare-parents标签，declare-parents是用来给bean增加额外方法的，不过需要注意一点delegate-ref和default-impl只能配置一个 -->
+		 *         <aop:declare-parents types-matching="com.example.demo.*" implement-interface="com.example.demo.IBase" delegate-ref="base" default-impl="com.example.demo.BaseImpl" />
+		 *
+		 *         <aop:before method="before" pointcut-ref="pointcut"/>
+		 *         <aop:around method="around" pointcut-ref="pointcut"/>
+		 *         <aop:after-returning method="afterReturn" pointcut-ref="pointcut"/>
+		 *         <aop:after-throwing method="afterException" pointcut-ref="pointcut"/>
+		 *         <aop:around method="around" pointcut-ref="pointcut"/>
+		 *     </aop:aspect>
+		 *     <!-- 注意<aop:advisor> 不允许同时配置pointcut-ref或pointcut属性，只允许配置其中的一个 -->
+		 *     <aop:advisor advice-ref="自定义增强Advisor（必须实现Advice接口）" pointcut-ref="pointcut">
+		 *     </aop:advisor>
+		 *     <aop:advisor advice-ref="自定义增强Advisor（必须实现Advice接口）" pointcut="execution(* com.*.*(..))">
+		 *     </aop:advisor>
+		 * </aop:config>
+		 */
 		registerBeanDefinitionParser("config", new ConfigBeanDefinitionParser());
+
+		/**
+		 * <aop:aspectj-autoproxy />声明自动为spring容器中那些配置@AspectJ切面的bean创建代理
+		 */
 		registerBeanDefinitionParser("aspectj-autoproxy", new AspectJAutoProxyBeanDefinitionParser());
+
+		/**
+		 * <aop:scoped-proxy />是包裹在bean标签内部的，一般用法如下所示：
+		 * <bean id="mybean" class="com.xxx.xxx" scope="prototype">
+		 *     <aop:scoped-proxy />
+		 * </bean>
+		 */
 		registerBeanDefinitionDecorator("scoped-proxy", new ScopedProxyBeanDefinitionDecorator());
 
 		// Only in 2.0 XSD: moved to context namespace as of 2.1

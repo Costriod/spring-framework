@@ -97,6 +97,10 @@ public final class ParserContext {
 		this.containingComponents.push(containingComponent);
 	}
 
+	/**
+	 * 移除并返回栈顶的元素
+	 * @return
+	 */
 	public CompositeComponentDefinition popContainingComponent() {
 		return this.containingComponents.pop();
 	}
@@ -106,6 +110,7 @@ public final class ParserContext {
 	}
 
 	public void registerComponent(ComponentDefinition component) {
+		//前面popContainingComponent()方法每次会移除一个，所以这里getContainingComponent()方法有可能为null
 		CompositeComponentDefinition containingComponent = getContainingComponent();
 		if (containingComponent != null) {
 			containingComponent.addNestedComponent(component);

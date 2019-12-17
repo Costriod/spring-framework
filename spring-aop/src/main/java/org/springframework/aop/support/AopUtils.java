@@ -247,7 +247,7 @@ public abstract class AopUtils {
 				if ((introductionAwareMethodMatcher != null &&
 						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions)) ||
 						//通过methodMatcher对method进行匹配操作，匹配到则返回true，根据不同匹配规则有不同的实现
-						//例如通过TransactionAttributeSourcePointcut读取method或者class的事务配置，找到了事务配置就为true
+						//例如事务通过TransactionAttributeSourcePointcut读取method或者class的事务配置，找到了事务配置就为true
 						methodMatcher.matches(method, targetClass)) {
 					return true;
 				}
@@ -283,15 +283,12 @@ public abstract class AopUtils {
 	 * @return whether the pointcut can apply on any method
 	 */
 	public static boolean canApply(Advisor advisor, Class<?> targetClass, boolean hasIntroductions) {
-		if (advisor instanceof IntroductionAdvisor) {//如果是IntroductionAdvisor，则通过matches方法判断
+		if (advisor instanceof IntroductionAdvisor) {//如果是IntroductionAdvisor，则通过ClassFilter的matches方法判断
 			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
 		}
 		else if (advisor instanceof PointcutAdvisor) {//如果是PointcutAdvisor
-			//一般是BeanFactoryTransactionAttributeSourceAdvisor，这个是配置了事务自动注册的bean
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
 			//这里通过pointcut扫描，本质上是通过MethodMatcher或者IntroductionAwareMethodMatcher按照自定义规则进行匹配操作
-			//例如BeanFactoryTransactionAttributeSourceAdvisor内部的pointcut（也就是TransactionAttributeSourcePointcut）
-			//TransactionAttributeSourcePointcut底层是通过SpringTransactionAnnotationParser扫描事务注解，只要扫描到就返回true
 			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
 		}
 		else {//其余情况一律为true

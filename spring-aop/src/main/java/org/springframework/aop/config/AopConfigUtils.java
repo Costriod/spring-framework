@@ -67,6 +67,12 @@ public abstract class AopConfigUtils {
 		return registerAutoProxyCreatorIfNecessary(registry, null);
 	}
 
+	/**
+	 * 注册一个{@link InfrastructureAdvisorAutoProxyCreator}的bean
+	 * @param registry
+	 * @param source
+	 * @return
+	 */
 	public static BeanDefinition registerAutoProxyCreatorIfNecessary(BeanDefinitionRegistry registry, Object source) {
 		return registerOrEscalateApcAsRequired(InfrastructureAdvisorAutoProxyCreator.class, registry, source);
 	}
@@ -75,6 +81,12 @@ public abstract class AopConfigUtils {
 		return registerAspectJAutoProxyCreatorIfNecessary(registry, null);
 	}
 
+	/**
+	 * 注册一个{@link AspectJAwareAdvisorAutoProxyCreator}的bean
+	 * @param registry
+	 * @param source
+	 * @return
+	 */
 	public static BeanDefinition registerAspectJAutoProxyCreatorIfNecessary(BeanDefinitionRegistry registry, Object source) {
 		return registerOrEscalateApcAsRequired(AspectJAwareAdvisorAutoProxyCreator.class, registry, source);
 	}
@@ -83,6 +95,12 @@ public abstract class AopConfigUtils {
 		return registerAspectJAnnotationAutoProxyCreatorIfNecessary(registry, null);
 	}
 
+	/**
+	 * 注册一个{@link AnnotationAwareAspectJAutoProxyCreator}的bean
+	 * @param registry
+	 * @param source
+	 * @return
+	 */
 	public static BeanDefinition registerAspectJAnnotationAutoProxyCreatorIfNecessary(BeanDefinitionRegistry registry, Object source) {
 		return registerOrEscalateApcAsRequired(AnnotationAwareAspectJAutoProxyCreator.class, registry, source);
 	}
@@ -101,7 +119,19 @@ public abstract class AopConfigUtils {
 		}
 	}
 
-
+	/**
+	 * 这个方法就是注册一个名为AUTO_PROXY_CREATOR_BEAN_NAME的bean，这里有几点需要注意：
+	 * 1.配置spring事务(<tx:annotation-driven>)的时候会传入一个InfrastructureAdvisorAutoProxyCreator
+	 * 2.配置spring aop(<aop:config>)的时候会传入一个AspectJAwareAdvisorAutoProxyCreator
+	 * 3.配置spring @Aspect(<aop:aspectj-autoproxy>)注解的方式实现aop，这里会传入一个AnnotationAwareAspectJAutoProxyCreator
+	 * 所以这里就看spring先解析哪个了，如果先解析<tx:annotation-driven>，那么就会注册InfrastructureAdvisorAutoProxyCreator，如果先解析<aop:config>，
+	 * 那么就注册AspectJAwareAdvisorAutoProxyCreator，如果先解析<aop:aspectj-autoproxy>，那么就会注册AnnotationAwareAspectJAutoProxyCreator，
+	 * 这里谁先解析就注册哪个，而且只会注册其中一个
+	 * @param cls
+	 * @param registry
+	 * @param source
+	 * @return
+	 */
 	private static BeanDefinition registerOrEscalateApcAsRequired(Class<?> cls, BeanDefinitionRegistry registry, Object source) {
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 

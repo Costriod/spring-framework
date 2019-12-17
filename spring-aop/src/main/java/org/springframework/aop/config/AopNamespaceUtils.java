@@ -62,7 +62,9 @@ public abstract class AopNamespaceUtils {
 		//注册一个InfrastructureAdvisorAutoProxyCreator的bean
 		BeanDefinition beanDefinition = AopConfigUtils.registerAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
-		//设置InfrastructureAdvisorAutoProxyCreator这个bean的proxyTargetClass为true、exposeProxy为true，前提是配置了这两个属性
+		//设置名为AUTO_PROXY_CREATOR_BEAN_NAME这个bean的proxyTargetClass为true、exposeProxy为true，前提是配置了这两个属性
+		//需要注意这里AUTO_PROXY_CREATOR_BEAN_NAME的bean有可能是InfrastructureAdvisorAutoProxyCreator、AspectJAwareAdvisorAutoProxyCreator、AnnotationAwareAspectJAutoProxyCreator
+		//但是只会注册一个，这里是注册了InfrastructureAdvisorAutoProxyCreator
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
 		//如果beanDefinition不为null，则注册beanDefinition
 		registerComponentIfNecessary(beanDefinition, parserContext);
@@ -70,9 +72,12 @@ public abstract class AopNamespaceUtils {
 
 	public static void registerAspectJAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
-
+		//注册一个AspectJAwareAdvisorAutoProxyCreator类型的bean
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		//设置名为AUTO_PROXY_CREATOR_BEAN_NAME这个bean的proxyTargetClass为true、exposeProxy为true，前提是配置了这两个属性
+		//需要注意这里AUTO_PROXY_CREATOR_BEAN_NAME的bean有可能是InfrastructureAdvisorAutoProxyCreator、AspectJAwareAdvisorAutoProxyCreator、AnnotationAwareAspectJAutoProxyCreator
+		//但是只会注册一个，这里是注册了AspectJAwareAdvisorAutoProxyCreator
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
@@ -82,13 +87,22 @@ public abstract class AopNamespaceUtils {
 
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		//设置名为AUTO_PROXY_CREATOR_BEAN_NAME这个bean的proxyTargetClass为true、exposeProxy为true，前提是配置了这两个属性
+		//需要注意这里AUTO_PROXY_CREATOR_BEAN_NAME的bean有可能是InfrastructureAdvisorAutoProxyCreator、AspectJAwareAdvisorAutoProxyCreator、AnnotationAwareAspectJAutoProxyCreator
+		//但是只会注册一个，这里是注册了AnnotationAwareAspectJAutoProxyCreator
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	/**
-	 * 设置InfrastructureAdvisorAutoProxyCreator这个bean的proxyTargetClass为true
-	 * 设置InfrastructureAdvisorAutoProxyCreator这个bean的exposeProxy为true
+	 * 设置AUTO_PROXY_CREATOR_BEAN_NAME这个bean的proxyTargetClass为true
+	 * 设置AUTO_PROXY_CREATOR_BEAN_NAME这个bean的exposeProxy为true
+	 *
+	 * AUTO_PROXY_CREATOR_BEAN_NAME这个bean是这三者其中的一个：
+	 * InfrastructureAdvisorAutoProxyCreator
+	 * AspectJAwareAdvisorAutoProxyCreator
+	 * AnnotationAwareAspectJAutoProxyCreator
+	 *
 	 * @param registry
 	 * @param sourceElement
 	 */
