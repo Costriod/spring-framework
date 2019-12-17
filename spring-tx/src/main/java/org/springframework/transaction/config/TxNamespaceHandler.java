@@ -52,7 +52,31 @@ public class TxNamespaceHandler extends NamespaceHandlerSupport {
 
 	@Override
 	public void init() {
+		/**
+		 * <tx:advice>是用来手工配置事务切面的，用法如下：
+		 * <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		 *     <property name="sessionFactory" ref="mySessionFactory" />
+		 * </bean>
+		 *
+		 * <tx:advice id="myAdvice" transaction-manager="transactionManager">
+		 *     <tx:attributes>
+		 *         <tx:method name="select*" propagation="REQUIRED"/>
+		 *         <tx:method name="delete*" propagation="REQUIRED"/>
+		 *         <tx:method name="update*" propagation="REQUIRED"/>
+		 *         <tx:method name="insert*" propagation="REQUIRED"/>
+		 *     </tx:attributes>
+		 * </tx:advice>
+		 *
+		 * <aop:config>
+		 *     <aop:pointcut id="myPointcut" expression="execution(* com.example.demo.service.*.*(..))"/>
+		 *     <aop:advisor pointcut-ref="myPointcut" advice-ref="myAdvice" />
+		 * </aop:config>
+		 */
 		registerBeanDefinitionParser("advice", new TxAdviceBeanDefinitionParser());
+
+		/**
+		 * <tx:annotation-driven>是用来配置事务，这个是能够自动扫描@Transactional注解，并且对@Transactional注解标注的class自动生成代理对象
+		 */
 		registerBeanDefinitionParser("annotation-driven", new AnnotationDrivenBeanDefinitionParser());
 		registerBeanDefinitionParser("jta-transaction-manager", new JtaTransactionManagerBeanDefinitionParser());
 	}
