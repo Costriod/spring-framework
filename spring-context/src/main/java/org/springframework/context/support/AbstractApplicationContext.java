@@ -415,7 +415,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
-	 * 返回context内部的LifecycleProcessor对象，如果为空则抛异常
+	 * 返回context内部的LifecycleProcessor对象，如果为空则抛异常，一般返回的是{@link DefaultLifecycleProcessor}
 	 * @return context内部的LifecycleProcessor对象
 	 * @throws IllegalStateException 如果LifecycleProcessor未初始化
 	 */
@@ -518,7 +518,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
-			//创建beanFactory，载入BeanDefinition并注册到beanFactory，别名也会注册进去
+			// 创建beanFactory，载入BeanDefinition并注册到beanFactory，别名也会注册进去
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// beanFactory的一些准备工作
@@ -530,7 +530,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				postProcessBeanFactory(beanFactory);
 
 				// Invoke factory processors registered as beans in the context.
-				// 执行注册在beanFactory里面的BeanFactoryPostProcessor
+				// 执行注册在beanFactory里面的BeanFactoryPostProcessor，在这里就会自动执行ConfigurationClassPostProcessor扫描class里面的一些@Configuration @Import等注解，具体参考其实现
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
@@ -918,7 +918,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * {@link org.springframework.context.event.ContextRefreshedEvent}.
 	 */
 	protected void finishRefresh() {
-		// Initialize lifecycle processor for this context.
+		// 一般是默认注册一个DefaultLifecycleProcessor到spring
 		initLifecycleProcessor();
 
 		// Propagate refresh to lifecycle processor first.

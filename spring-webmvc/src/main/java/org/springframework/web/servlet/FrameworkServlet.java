@@ -491,6 +491,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		long startTime = System.currentTimeMillis();
 
 		try {
+			//
 			this.webApplicationContext = initWebApplicationContext();
 			initFrameworkServlet();
 		}
@@ -520,11 +521,12 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see #setContextConfigLocation
 	 */
 	protected WebApplicationContext initWebApplicationContext() {
+		//从servletContext里面读取出XmlWebApplicationContext，这个XmlWebApplicationContext是在ContextLoaderListener里面初始化后主动设置到servletContext里面的
 		WebApplicationContext rootContext =
 				WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 		WebApplicationContext wac = null;
 
-		if (this.webApplicationContext != null) {
+		if (this.webApplicationContext != null) {//如果当前已经存在了webApplicationContext
 			// A context instance was injected at construction time -> use it
 			wac = this.webApplicationContext;
 			if (wac instanceof ConfigurableWebApplicationContext) {
@@ -535,7 +537,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 					if (cwac.getParent() == null) {
 						// The context instance was injected without an explicit parent -> set
 						// the root application context (if any; may be null) as the parent
-						cwac.setParent(rootContext);
+						cwac.setParent(rootContext);//将webApplicationContext的parent指向前面初始化好的XmlWebApplicationContext
 					}
 					configureAndRefreshWebApplicationContext(cwac);
 				}
@@ -546,11 +548,11 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// has been registered in the servlet context. If one exists, it is assumed
 			// that the parent context (if any) has already been set and that the
 			// user has performed any initialization such as setting the context id
-			wac = findWebApplicationContext();
+			wac = findWebApplicationContext();//这里一般是null
 		}
 		if (wac == null) {
 			// No context instance is defined for this servlet -> create a local one
-			wac = createWebApplicationContext(rootContext);
+			wac = createWebApplicationContext(rootContext);//这里
 		}
 
 		if (!this.refreshEventReceived) {
@@ -584,7 +586,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see #getContextAttribute()
 	 */
 	protected WebApplicationContext findWebApplicationContext() {
-		String attrName = getContextAttribute();
+		String attrName = getContextAttribute();//一般默认是null
 		if (attrName == null) {
 			return null;
 		}
@@ -612,6 +614,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see org.springframework.web.context.support.XmlWebApplicationContext
 	 */
 	protected WebApplicationContext createWebApplicationContext(ApplicationContext parent) {
+		//contextClass默认是XmlWebApplicationContext
 		Class<?> contextClass = getContextClass();
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("Servlet with name '" + getServletName() +
@@ -627,10 +630,11 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		ConfigurableWebApplicationContext wac =
 				(ConfigurableWebApplicationContext) BeanUtils.instantiateClass(contextClass);
 
+		//当前wac是新创建的XmlWebApplicationContext，这里getEnvironment()一般返回的是一个新创建的StandardServletEnvironment
 		wac.setEnvironment(getEnvironment());
-		wac.setParent(parent);
+		wac.setParent(parent);//当前XmlWebApplicationContext设置parent节点，parent节点就是前面ContextLoaderListener启动时创建的XmlWebApplicationContext，这也就意味着springmvc会有两个context对象生成
 		wac.setConfigLocation(getContextConfigLocation());
-
+		//执行刚刚创建的XmlWebApplicationContext的refresh操作
 		configureAndRefreshWebApplicationContext(wac);
 
 		return wac;

@@ -170,6 +170,10 @@ public abstract class WebApplicationContextUtils {
 	}
 
 	/**
+	 * 1.注册这几个("request", "session", "globalSession", "application") scope到beanFactory，scope在getBean的时候有用到，
+	 * getBean会根据beanClass配置的@Scope属性判断该使用哪个Scope来创建bean，具体参考ApplicationContext的getBean方法实现
+	 *
+	 * 2.注册几个scope对应的ObjectFactory，这个ObjectFactory是用来创建对应scope的对象的
 	 * Register web-specific scopes ("request", "session", "globalSession", "application")
 	 * with the given BeanFactory, as used by the WebApplicationContext.
 	 * @param beanFactory the BeanFactory to configure
@@ -206,6 +210,8 @@ public abstract class WebApplicationContextUtils {
 	}
 
 	/**
+	 * 其实就是往DefaultListableBeanFactory里面注册bean对象，然后解析servletContext的param和servletConfig的param放进一个map里面，
+	 * 然后解析servletContext的attribute放进另一个map里面，最后将这两个map注册到DefaultListableBeanFactory里面，名字分别为：contextParameters、contextAttributes
 	 * Register web-specific environment beans ("contextParameters", "contextAttributes")
 	 * with the given BeanFactory, as used by the WebApplicationContext.
 	 * @param bf the BeanFactory to configure

@@ -100,6 +100,7 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 
 
 	/**
+	 * web项目载入顺序 context-param >> listener  >> fileter  >> servlet，springmvc项目启动时入口在这里
 	 * Initialize the root web application context.
 	 */
 	@Override

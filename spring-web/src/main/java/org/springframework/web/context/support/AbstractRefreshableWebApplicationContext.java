@@ -153,6 +153,7 @@ public abstract class AbstractRefreshableWebApplicationContext extends AbstractR
 	}
 
 	/**
+	 * 对于web应用，则ApplicationContext的refresh操作会进入这里，也就是初始化一些属性
 	 * Register request/session scopes, a {@link ServletContextAwareProcessor}, etc.
 	 */
 	@Override
@@ -160,8 +161,9 @@ public abstract class AbstractRefreshableWebApplicationContext extends AbstractR
 		beanFactory.addBeanPostProcessor(new ServletContextAwareProcessor(this.servletContext, this.servletConfig));
 		beanFactory.ignoreDependencyInterface(ServletContextAware.class);
 		beanFactory.ignoreDependencyInterface(ServletConfigAware.class);
-
+		//注册一些scope对象以及scope对应的ObjectFactory，这些scope在创建bean的时候有用到，具体参考getBean方法具体实现
 		WebApplicationContextUtils.registerWebApplicationScopes(beanFactory, this.servletContext);
+		//其实就是读取servletContext、servletConfig里面的param和attribute，然后分别放进两个map，最后将两个map作为bean注册到beanFactory里面
 		WebApplicationContextUtils.registerEnvironmentBeans(beanFactory, this.servletContext, this.servletConfig);
 	}
 

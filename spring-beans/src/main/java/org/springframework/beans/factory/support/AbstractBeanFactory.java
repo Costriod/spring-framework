@@ -238,7 +238,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		Object bean;
 
 		// Eagerly check singleton cache for manually registered singletons.
-		Object sharedInstance = getSingleton(beanName);//从Singleton缓存里面找
+		Object sharedInstance = getSingleton(beanName);//从Singleton缓存里面找 （可能之前注册了ObjectFactory，具体参考doCreateBean方法里面那一段注册ObjectFactory的代码片段）
 		if (sharedInstance != null && args == null) {//如果缓存命中，并且参数args为null
 			if (logger.isDebugEnabled()) {
 				if (isSingletonCurrentlyInCreation(beanName)) {
@@ -262,7 +262,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 			// Check if bean definition exists in this factory.
 			BeanFactory parentBeanFactory = getParentBeanFactory();
-			//当前BeanFactory不包含beanName并且parentBeanFactory不为null，则从parentBeanFactory里面找bean
+			//当前BeanFactory不包含这个beanDefinition并且parentBeanFactory不为null，则从parentBeanFactory里面找bean
+			//如果我在parent注册了这个beanDefinition，然后当前context也注册了同样的beanDefinition，此刻下面的if条件不会满足，
+			//那就会导致parent创建了这个bean之后，当前context又会创建一次这个bean，就会导致bean重复创建两次，这一点需要注意。
+			//出现这种情况的场景一般是spring mvc，因为spring mvc会创建两个context，一个是root WebApplicationContext，这个是ContextLoaderListener创建的；
+			//另一个是servlet WebApplicationContext，这是DispatcherServlet创建的，如果两个context都读取了同一个xml配置文件，这里就有可能bean被创建两次，需要注意
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 				// Not found -> check parent.
 				String nameToLookup = originalBeanName(name);
@@ -339,7 +343,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					bean = getObjectForBeanInstance(prototypeInstance, name, beanName, mbd);
 				}
 
-				else {//如果是其他，则通过scope获取bean
+				else {//如果是其他，则通过scope获取bean，比如spring的web request以及session级别的scope
 					String scopeName = mbd.getScope();
 					final Scope scope = this.scopes.get(scopeName);
 					if (scope == null) {
