@@ -860,6 +860,7 @@ public class DispatcherServlet extends FrameworkServlet {
 
 
 	/**
+	 * 从父类FrameworkServlet的service方法最终跳转到这里来
 	 * Exposes the DispatcherServlet-specific request attributes and delegates to {@link #doDispatch}
 	 * for the actual dispatching.
 	 */
@@ -899,6 +900,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		request.setAttribute(FLASH_MAP_MANAGER_ATTRIBUTE, this.flashMapManager);
 
 		try {
+			//前面设置attribute完成之后进入doDispatch里面
 			doDispatch(request, response);
 		}
 		finally {
@@ -934,10 +936,12 @@ public class DispatcherServlet extends FrameworkServlet {
 			Exception dispatchException = null;
 
 			try {
+			    //检查是否是文件上传的请求，必须是post并且header里面的content-type 是 multipart/ 开头
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
 				// Determine handler for the current request.
+				// 找出HandlerExecutionChain
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null || mappedHandler.getHandler() == null) {
 					noHandlerFound(processedRequest, response);
@@ -945,6 +949,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				// Determine handler adapter for the current request.
+				// 找出handlerAdapter
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
@@ -959,12 +964,13 @@ public class DispatcherServlet extends FrameworkServlet {
 						return;
 					}
 				}
-
+				//执行注册的HandlerInterceptor的preHandle操作
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
 
 				// Actually invoke the handler.
+				// 真正处理请求的地方
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
@@ -972,6 +978,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				applyDefaultViewName(processedRequest, mv);
+				//执行注册的HandlerInterceptor的postHandle操作
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			}
 			catch (Exception ex) {
@@ -982,6 +989,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new NestedServletException("Handler dispatch failed", err);
 			}
+			//执行view的渲染操作，渲染完最后执行注册的HandlerInterceptor的afterCompletion操作
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
@@ -1001,6 +1009,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			else {
 				// Clean up any resources used by a multipart request.
 				if (multipartRequestParsed) {
+					//清除上传文件的本地临时文件
 					cleanupMultipart(processedRequest);
 				}
 			}
@@ -1057,6 +1066,7 @@ public class DispatcherServlet extends FrameworkServlet {
 		}
 
 		if (mappedHandler != null) {
+			//执行所有HandlerInterceptor的afterCompletion操作
 			mappedHandler.triggerAfterCompletion(request, response, null);
 		}
 	}
@@ -1091,6 +1101,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * @see MultipartResolver#resolveMultipart
 	 */
 	protected HttpServletRequest checkMultipart(HttpServletRequest request) throws MultipartException {
+	    //默认是CommonsMultipartResolver
 		if (this.multipartResolver != null && this.multipartResolver.isMultipart(request)) {
 			if (WebUtils.getNativeRequest(request, MultipartHttpServletRequest.class) != null) {
 				logger.debug("Request is already a MultipartHttpServletRequest - if not in a forward, " +
@@ -1102,6 +1113,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			}
 			else {
 				try {
+				    //只要request的header里面content-type是 "multipart/" 开头即返回true
 					return this.multipartResolver.resolveMultipart(request);
 				}
 				catch (MultipartException ex) {

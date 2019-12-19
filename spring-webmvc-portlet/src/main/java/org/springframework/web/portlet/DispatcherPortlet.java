@@ -392,6 +392,7 @@ public class DispatcherPortlet extends FrameworkPortlet {
 
 		if (this.detectAllHandlerMappings) {
 			// Find all HandlerMappings in the ApplicationContext, including ancestor contexts.
+			// 找出context内所有的HandlerMapping，并且也会从parent一路往上找
 			Map<String, HandlerMapping> matchingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(
 					context, HandlerMapping.class, true, false);
 			if (!matchingBeans.isEmpty()) {
@@ -563,6 +564,9 @@ public class DispatcherPortlet extends FrameworkPortlet {
 	 * @param context the current Portlet ApplicationContext
 	 * @param strategyInterface the strategy interface
 	 * @return the List of corresponding strategy objects
+	 *
+	 * 这个方法就是从classpath载入DispatcherServlet.properties，然后读取里面的key-value，value是一个字符串，可能有多个值用","分隔，
+	 * 但是需要注意一点，如果value有多个值，那么这里会返回所有的value对应的类对象
 	 */
 	@SuppressWarnings("unchecked")
 	protected <T> List<T> getDefaultStrategies(ApplicationContext context, Class<T> strategyInterface) {

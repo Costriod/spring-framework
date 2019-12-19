@@ -257,6 +257,7 @@ public abstract class BeanFactoryUtils {
 	}
 
 	/**
+	 * 从当前ListableBeanFactory找出所有这个类型的bean，然后从parent的ListableBeanFactory也找出这个类型的bean，然后一起返回
 	 * Return all beans of the given type or subtypes, also picking up beans defined in
 	 * ancestor bean factories if the current bean factory is a HierarchicalBeanFactory.
 	 * The returned Map will only contain beans of this type.

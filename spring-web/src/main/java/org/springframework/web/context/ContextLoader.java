@@ -509,6 +509,10 @@ public class ContextLoader {
 		for (ApplicationContextInitializer<ConfigurableApplicationContext> initializer : this.contextInitializers) {
 			initializer.initialize(wac);
 		}
+		//在web容器启动时为提供给第三方组件机会做一些初始化的工作，例如注册servlet或者filtes等，servlet规范中通过ServletContainerInitializer实现此功能。
+		//每个框架要使用ServletContainerInitializer就必须在对应的jar包的META-INF/services 目录创建一个名为javax.servlet.ServletContainerInitializer的文件，
+		//文件内容指定具体的ServletContainerInitializer实现类，这样servlet容器载入应用的时候会自动载入META-INF/services/javax.servlet.ServletContainerInitializer
+		//文件里面配置的class，比如spring web里面默认会在META-INF/services/javax.servlet.ServletContainerInitializer下面配置一个SpringServletContainerInitializer
 	}
 
 	/**
@@ -525,14 +529,14 @@ public class ContextLoader {
 
 		List<Class<ApplicationContextInitializer<ConfigurableApplicationContext>>> classes =
 				new ArrayList<Class<ApplicationContextInitializer<ConfigurableApplicationContext>>>();
-
+		//优先读取globalInitializerClasses里面配置的多个Initializer
 		String globalClassNames = servletContext.getInitParameter(GLOBAL_INITIALIZER_CLASSES_PARAM);
 		if (globalClassNames != null) {
 			for (String className : StringUtils.tokenizeToStringArray(globalClassNames, INIT_PARAM_DELIMITERS)) {
 				classes.add(loadInitializerClass(className));
 			}
 		}
-
+		//接着读取contextInitializerClasses里面配置的多个Initializer
 		String localClassNames = servletContext.getInitParameter(CONTEXT_INITIALIZER_CLASSES_PARAM);
 		if (localClassNames != null) {
 			for (String className : StringUtils.tokenizeToStringArray(localClassNames, INIT_PARAM_DELIMITERS)) {
