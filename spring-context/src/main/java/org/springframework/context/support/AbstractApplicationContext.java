@@ -69,6 +69,7 @@ import org.springframework.context.weaving.LoadTimeWeaverAware;
 import org.springframework.context.weaving.LoadTimeWeaverAwareProcessor;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.env.AbstractEnvironment;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.StandardEnvironment;
@@ -310,6 +311,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 	/**
 	 * 创建一个新的Environment对象，一般默认是{@link StandardEnvironment}，子类可以覆盖
+	 * 创建Environment对象的默认构造函数里面能自动执行载入配置操作，具体参考{@link AbstractEnvironment} 的构造方法
 	 */
 	protected ConfigurableEnvironment createEnvironment() {
 		return new StandardEnvironment();
@@ -603,7 +605,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			logger.info("Refreshing " + this);
 		}
 
-		//初始化context environment所有placeholder property sources
+		//初始化context environment所有property sources
 		//钩子函数，子类可覆盖该方法，默认是什么都不干
 		initPropertySources();
 

@@ -860,7 +860,9 @@ public class DispatcherServlet extends FrameworkServlet {
 
 
 	/**
-	 * 从父类FrameworkServlet的service方法最终跳转到这里来
+	 * 从父类FrameworkServlet的service方法最终跳转到这里来，DispatcherServlet另外一块核心内容在<mvc:annotation-driven>标签，
+	 * 该标签引入了AnnotationDrivenBeanDefinitionParser，spring的一些请求处理工具类都在AnnotationDrivenBeanDefinitionParser
+	 *
 	 * Exposes the DispatcherServlet-specific request attributes and delegates to {@link #doDispatch}
 	 * for the actual dispatching.
 	 */

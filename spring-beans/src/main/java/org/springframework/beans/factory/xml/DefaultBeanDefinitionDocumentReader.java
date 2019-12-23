@@ -111,7 +111,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 
 
 	/**
-	 * 解析所有 {@code <beans/>} 标签下面的beanDefinition
+	 * 解析所有 {@code <beans/>} 标签下面的beanDefinition，root当前就是最外层的<beans></beans>
 	 */
 	protected void doRegisterBeanDefinitions(Element root) {
 		// Any nested <beans> elements will cause recursion in this method. In
@@ -193,7 +193,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 			processBeanDefinition(ele, delegate);
 		}
 		else if (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) {//内嵌的beans标签
-			// recurse
+			// 递归解析
 			doRegisterBeanDefinitions(ele);
 		}
 	}

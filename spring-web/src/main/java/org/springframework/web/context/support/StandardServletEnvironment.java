@@ -91,6 +91,8 @@ public class StandardServletEnvironment extends StandardEnvironment implements C
 
 	@Override
 	public void initPropertySources(ServletContext servletContext, ServletConfig servletConfig) {
+		//将当前environment的propertySources里面的value替换，替换成ServletContextPropertySource和ServletConfigPropertySource，
+		//同时将维持对servletContext、servletConfig对象的强引用关系
 		WebApplicationContextUtils.initServletPropertySources(getPropertySources(), servletContext, servletConfig);
 	}
 
